@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>全球手办与收藏模型分布图</title>
+<meta name="description" content="手办、扭蛋、盲盒与角色模型的全球分布：市场总量、人均浓度、产业分工三种读法，附口径说明与一手来源。">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#26282C">
+<style>
+:root{
+  --ground:#26282C;
+  --panel:#2F3238;
+  --panel2:#383C43;
+  --line:#4A4E57;
+  --land:#454951;
+  --nodata:#3A3D44;
+  --ink:#E6E2D9;
+  --muted:#979BA3;
+  --mark:#EDE9E0;
+  --focus:#7FE0D8;
+  --cn:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  /* 显示体与等宽体都只用系统字体：不连外网，离线和内网都能正常打开 */
+  --dp:"Barlow Condensed","Oswald","Haettenschweiler","Arial Narrow",var(--cn);
+  --mo:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--cn);
+  -webkit-font-smoothing:antialiased;
+  padding:20px 16px 40px;
+}
+.wrap{max-width:1180px;margin:0 auto}
+
+/* ---------- masthead: reads like a paint / spec sheet header ---------- */
+.head{border-top:2px solid var(--ink);padding-top:10px;margin-bottom:18px}
+.eyebrow{
+  font-family:var(--mo);font-size:10.5px;letter-spacing:.22em;
+  color:var(--muted);text-transform:uppercase;display:flex;
+  justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px;
+}
+h1{
+  font-family:var(--dp);font-weight:700;font-size:clamp(30px,6.4vw,54px);
+  line-height:.98;letter-spacing:.005em;margin:0 0 8px;
+}
+h1 em{font-style:normal;color:var(--muted);font-weight:400}
+.sub{font-size:12.5px;line-height:1.65;color:var(--muted);max-width:62ch}
+
+/* ---------- top stats strip ---------- */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);margin:18px 0;}
+.stat{background:var(--panel);padding:11px 12px 12px}
+.stat b{display:block;font-family:var(--dp);font-weight:700;font-size:26px;line-height:1;margin-bottom:4px}
+.stat b .u{font-size:14px}
+.stat span{font-family:var(--mo);font-size:9.5px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.stat i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:3px}
+
+/* ---------- 视图开关：用单选框驱动，没有 JavaScript 也能换图 ---------- */
+.vsel{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  clip-path:inset(50%);overflow:hidden;white-space:nowrap}
+
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:1fr 268px;gap:14px;align-items:start}
+/* min-width:0 让网格项可以比地图窄，横向滚动交给 .scroller，页面本身不横滚 */
+.mapbox{background:var(--panel);border:1px solid var(--line);position:relative;min-width:0}
+
+/* view switch — rendered as paint-chip tabs */
+.tabs{display:flex;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{
+  flex:1;min-width:96px;background:none;border:0;border-right:1px solid var(--line);
+  color:var(--muted);padding:9px 8px 8px;cursor:pointer;font-family:var(--cn);
+  font-size:12.5px;text-align:left;position:relative;transition:color .15s,background .15s;
+}
+.tab:last-child{border-right:0}
+.tab .k{font-family:var(--mo);font-size:9px;letter-spacing:.14em;display:block;opacity:.65;margin-bottom:2px}
+.tab:hover{background:var(--panel2);color:var(--ink)}
+
+.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}
+svg.map{display:block;width:100%;height:auto;background:#212226}
+@media (max-width:700px){
+  svg.map{min-width:660px}
+}
+.c{fill:var(--nodata);stroke:#26282C;stroke-width:.4;vector-effect:non-scaling-stroke;transition:fill .25s ease,opacity .25s ease}
+.c.hot{stroke:var(--mark);stroke-width:1.1}
+.node{pointer-events:none}
+.node line{stroke:var(--mark);stroke-width:.9;vector-effect:non-scaling-stroke}
+.node circle{fill:none;stroke:var(--mark);stroke-width:.9;vector-effect:non-scaling-stroke}
+.node rect{fill:var(--mark)}
+.node polygon{fill:var(--mark)}
+.nodehit{fill:transparent;cursor:pointer}
+
+/* legend: the paint-chip row (signature element) */
+.legend{border-top:1px solid var(--line);padding:11px 12px 12px;display:flex;
+  gap:14px;flex-wrap:wrap;align-items:flex-end}
+.leg{display:none}
+.chips{display:flex;align-items:flex-end;gap:0}
+.chip{width:38px}
+.chip .sw{height:22px;border:1px solid rgba(0,0,0,.35);border-right:0}
+.chip:last-child .sw{border-right:1px solid rgba(0,0,0,.35)}
+.chip .lb{font-family:var(--mo);font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.02em}
+.legtitle{font-family:var(--mo);font-size:9.5px;letter-spacing:.16em;color:var(--muted);
+  text-transform:uppercase;margin-bottom:7px}
+.cats{display:flex;gap:13px;flex-wrap:wrap}
+.cat{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);cursor:pointer}
+.cat i{width:11px;height:11px;display:block;flex:0 0 auto;border:1px solid rgba(0,0,0,.35)}
+.cat:hover{color:var(--ink)}
+.marks{display:flex;gap:13px;flex-wrap:wrap;font-family:var(--mo);font-size:9.5px;color:var(--muted)}
+.marks span{display:flex;align-items:center;gap:5px}
+.marks svg{overflow:visible}
+.legright{margin-left:auto}
+
+/* right rail — spec readout */
+.rail{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line)}
+.card h2{
+  font-family:var(--mo);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin:0;padding:9px 12px 8px;border-bottom:1px solid var(--line);font-weight:500;
+}
+.readout{padding:12px}
+.rname{font-family:var(--dp);font-weight:700;font-size:26px;line-height:1;margin-bottom:2px}
+.rlatin{font-family:var(--mo);font-size:9.5px;letter-spacing:.14em;color:var(--muted);
+  text-transform:uppercase;margin-bottom:11px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;
+  border-bottom:1px dotted var(--line);font-size:12px}
+.row:last-of-type{border-bottom:0}
+.row span{color:var(--muted)}
+.row b{font-family:var(--mo);font-weight:500;font-size:12.5px}
+.note{font-size:11.5px;line-height:1.6;color:var(--muted);margin-top:10px;
+  border-left:2px solid var(--line);padding-left:9px}
+.hint{padding:14px 12px 16px;font-size:12px;color:var(--muted);line-height:1.65}
+
+/* ranking bars */
+.bars{padding:9px 12px 13px}
+.barset{display:none}
+.bar{margin-bottom:7px}
+.bar .t{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px;gap:8px}
+.bar .t b{font-family:var(--mo);font-weight:500;color:var(--muted);font-size:11px}
+.bar .tr{height:6px;background:#22242A}
+.bar .fl{height:6px;transition:width .4s cubic-bezier(.3,.9,.3,1)}
+.bar.act .t{color:#fff}
+.btitle{display:none}
+
+/* firms */
+.firms{padding:11px 12px 13px}
+.firm{margin-bottom:12px}
+.firm:last-child{margin-bottom:2px}
+.firm .fn{font-size:12px;font-weight:600;margin-bottom:1px}
+.firm .fm{font-family:var(--mo);font-size:10px;color:var(--muted);margin-bottom:5px}
+.firm .stack{display:flex;height:9px;overflow:hidden}
+.firm .stack div{height:9px}
+.firm .fk{display:flex;gap:9px;flex-wrap:wrap;margin-top:5px;font-size:10.5px;color:var(--muted)}
+.firm .fk span{display:flex;align-items:center;gap:4px}
+.firm .fk i{width:8px;height:8px;display:block}
+.firm .fnote{font-size:11px;color:var(--muted);line-height:1.55;margin-top:4px}
+
+/* nodes list */
+.nodelist{padding:4px 0 6px;max-height:270px;overflow-y:auto}
+.nl{display:flex;gap:8px;padding:6px 12px;font-size:11.5px;line-height:1.45;
+  border-bottom:1px dotted var(--line)}
+.nl:hover{background:var(--panel2)}
+.nl .g{font-family:var(--mo);font-size:9px;color:var(--muted);letter-spacing:.06em;
+  flex:0 0 30px;padding-top:2px}
+.nl .n{font-weight:600}
+.nl .d{color:var(--muted);font-size:11px}
+
+/* ---------- 全量数据表：不依赖脚本，也是地图的无障碍替代 ----------
+   右栏比地图高得多，把表格放进左栏第二行，正好补上地图下面的空当 */
+.sheet{background:var(--panel);border:1px solid var(--line);grid-column:1;grid-row:2;min-width:0}
+.rail{grid-row:1 / span 2}
+.sheet h2{
+  font-family:var(--mo);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin:0;padding:9px 12px 8px;border-bottom:1px solid var(--line);font-weight:500;
+}
+.sheetscroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:11.5px}
+caption{text-align:left;padding:9px 12px 0;font-size:11.5px;color:var(--muted);line-height:1.6}
+th,td{padding:6px 10px;border-bottom:1px dotted var(--line);text-align:left;vertical-align:top}
+thead th{font-family:var(--mo);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:hover{background:var(--panel2)}
+td.num{font-family:var(--mo);text-align:right;white-space:nowrap}
+td.geo b{font-weight:600}
+td.geo .lat{display:block;font-family:var(--mo);font-size:9px;letter-spacing:.1em;
+  color:var(--muted);text-transform:uppercase}
+td.rl{white-space:nowrap}
+td.rl i{width:9px;height:9px;display:inline-block;margin-right:5px;vertical-align:baseline}
+td.desc{color:var(--muted);line-height:1.55;min-width:19em}
+
+footer{margin-top:22px;border-top:1px solid var(--line);padding-top:11px;
+  font-size:11px;line-height:1.7;color:var(--muted)}
+footer b{color:var(--ink);font-weight:600}
+
+@media (max-width:860px){
+  .grid{grid-template-columns:1fr}
+  .sheet,.rail{grid-column:auto;grid-row:auto}
+  .strip{grid-template-columns:repeat(2,1fr)}
+  .rail{flex-direction:column}
+  .nodelist{max-height:220px}
+  .legright{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- 视图配色：由 build.js 依据同一份色阶生成 ---------- */
+#v-m:checked ~ .grid .b-m-0{fill:#3A424C;background:#3A424C}
+#v-m:checked ~ .grid .b-m-1{fill:#255A72;background:#255A72}
+#v-m:checked ~ .grid .b-m-2{fill:#1E7C99;background:#1E7C99}
+#v-m:checked ~ .grid .b-m-3{fill:#2FA6BC;background:#2FA6BC}
+#v-m:checked ~ .grid .b-m-4{fill:#6FD8CF;background:#6FD8CF}
+#v-pc:checked ~ .grid .b-pc-0{fill:#413F3A;background:#413F3A}
+#v-pc:checked ~ .grid .b-pc-1{fill:#6E5330;background:#6E5330}
+#v-pc:checked ~ .grid .b-pc-2{fill:#A6762C;background:#A6762C}
+#v-pc:checked ~ .grid .b-pc-3{fill:#D9A230;background:#D9A230}
+#v-pc:checked ~ .grid .b-pc-4{fill:#F3D45F;background:#F3D45F}
+#v-role:checked ~ .grid .r-ip{fill:#E2445C;background:#E2445C}
+#v-role:checked ~ .grid .r-mfg{fill:#E8A33D;background:#E8A33D}
+#v-role:checked ~ .grid .r-core{fill:#3FA9C9;background:#3FA9C9}
+#v-role:checked ~ .grid .r-emerging{fill:#7BC043;background:#7BC043}
+#v-m:checked ~ .grid label[for="v-m"],
+#v-pc:checked ~ .grid label[for="v-pc"],
+#v-role:checked ~ .grid label[for="v-role"]{color:var(--ink);background:var(--panel2)}
+#v-m:checked ~ .grid label[for="v-m"]::before,
+#v-pc:checked ~ .grid label[for="v-pc"]::before,
+#v-role:checked ~ .grid label[for="v-role"]::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--ink)}
+#v-m:checked ~ .grid .leg-m{display:block}
+#v-pc:checked ~ .grid .leg-pc{display:block}
+#v-role:checked ~ .grid .leg-role{display:block}
+#v-m:checked ~ .grid .barset-m,
+#v-role:checked ~ .grid .barset-m,
+#v-pc:checked ~ .grid .barset-pc{display:block}
+#v-m:checked ~ .grid .btitle-m,
+#v-role:checked ~ .grid .btitle-m,
+#v-pc:checked ~ .grid .btitle-pc{display:block}
+#v-role:checked ~ #rf-ip:checked ~ .grid .c:not(.r-ip){opacity:.28}
+#rf-ip:checked ~ .grid label[for="rf-ip"]{color:var(--ink)}
+#v-role:checked ~ #rf-mfg:checked ~ .grid .c:not(.r-mfg){opacity:.28}
+#rf-mfg:checked ~ .grid label[for="rf-mfg"]{color:var(--ink)}
+#v-role:checked ~ #rf-core:checked ~ .grid .c:not(.r-core){opacity:.28}
+#rf-core:checked ~ .grid label[for="rf-core"]{color:var(--ink)}
+#v-role:checked ~ #rf-emerging:checked ~ .grid .c:not(.r-emerging){opacity:.28}
+#rf-emerging:checked ~ .grid label[for="rf-emerging"]{color:var(--ink)}
+#rf-all:checked ~ .grid label[for="rf-all"]{color:var(--ink)}
+#v-m:focus-visible ~ .grid label[for="v-m"],
+#v-pc:focus-visible ~ .grid label[for="v-pc"],
+#v-role:focus-visible ~ .grid label[for="v-role"]{outline:2px solid var(--focus);outline-offset:-2px}
+#rf-all:focus-visible ~ .grid label[for="rf-all"],
+#rf-ip:focus-visible ~ .grid label[for="rf-ip"],
+#rf-mfg:focus-visible ~ .grid label[for="rf-mfg"],
+#rf-core:focus-visible ~ .grid label[for="rf-core"],
+#rf-emerging:focus-visible ~ .grid label[for="rf-emerging"]{outline:2px solid var(--focus);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="head">
+  <div class="eyebrow"><span>分布图 · 全球市场</span><span>数据截至 2024–2025</span></div>
+  <h1>手办与收藏模型的<em> / </em>世界版图</h1>
+  <p class="sub">这个爱好并不是均匀铺在地球上的。它有一个原型策源地、一条制造带、几块高浓度消费区，和一圈刚刚被拉进来的新市场。切换下面三种读法，看的是同一批地方的三个不同侧面。</p>
+</header>
+
+<div class="strip">
+  <div class="stat"><b>245<span class="u">亿美元</span></b><span>AJA · 2024</span><i>全球动画产业市场 ¥3.84 兆</i></div>
+  <div class="stat"><b>56<span class="u">%</span></b><span>Overseas share</span><i>海外 ¥2.17 兆 &gt; 日本国内 ¥1.67 兆</i></div>
+  <div class="stat"><b>51<span class="u">国</span></b><span>IOEA events</span><i>136 场动漫展分布的国家/地区数</i></div>
+  <div class="stat"><b>43.8<span class="u">%</span></b><span>Pop Mart 2025</span><i>海外收入占比（2024 为 31.8%）</i></div>
+</div>
+
+<input class="vsel" type="radio" name="view" id="v-m" checked>
+<input class="vsel" type="radio" name="view" id="v-pc">
+<input class="vsel" type="radio" name="view" id="v-role">
+<input class="vsel" type="radio" name="rolefilter" id="rf-all" checked>
+<input class="vsel" type="radio" name="rolefilter" id="rf-ip">
+<input class="vsel" type="radio" name="rolefilter" id="rf-mfg">
+<input class="vsel" type="radio" name="rolefilter" id="rf-core">
+<input class="vsel" type="radio" name="rolefilter" id="rf-emerging">
+
+<div class="grid">
+  <div class="mapbox">
+    <div class="tabs">
+      <label class="tab" for="v-m"><span class="k">01 / VOLUME</span>市场总量</label>
+      <label class="tab" for="v-pc"><span class="k">02 / DENSITY</span>人均浓度</label>
+      <label class="tab" for="v-role"><span class="k">03 / ROLE</span>产业分工</label>
+    </div>
+    <div class="scroller">
+    <svg class="map" viewBox="0 0 1000 497.3" role="img" aria-label="全球手办与收藏模型分布图，完整数值见页面下方的数据表">
+      <g id="lands">
+        <path class="c" d="M995 364l1 0,0 2,-3 0,1 -2,1 0zM0 360l0 1,996 2,0 -1,4 -2,-1000 0z" data-name="Fiji"><title>Fiji · 暂无估算</title></path>
+        <path class="c" d="M594 318l11 6,0 1,4 3,-1 3,0 2,2 1,-1 5,3 5,-2 1,-9 3,-5 -1,-2 -6,-9 -3,-3 -5,-1 -5,4 -4,0 -2,1 -2,-2 -2,10 0z" data-name="Tanzania"><title>Tanzania · 暂无估算</title></path>
+        <path class="c" d="M476 236l0 6,-9 -1,0 8,-3 0,0 6,-11 0,0 1,0 -1,6 -1,2 -6,4 -3,3 -6,8 -1,0 -2z" data-name="W. Sahara"><title>W. Sahara · 暂无估算</title></path>
+        <path class="c b-m-2 b-pc-2 r-core" d="M159 167l-8 -5,-5 -2,-2 -3,1 -2,-4 -2,0 -3,-4 -3,2 -6,-5 -3,-4 -7,-6 -6,-6 4,-4 -4,-6 -2,0 -42,13 4,6 -4,4 1,8 -4,2 2,2 -1,1 -2,7 5,3 -4,1 4,3 -1,1 -1,4 0,10 4,7 1,4 2,-4 2,5 1,10 -1,3 3,3 -2,-3 -3,2 -1,5 -1,5 4,3 0,5 2,9 -1,-1 -3,3 -1,4 2,0 4,2 -3,2 0,1 -5,-6 -5,0 -6,4 -3,3 0,3 3,4 5,-3 3,5 1,0 5,4 -4,4 3,-1 4,2 3,5 -8,0 -5,8 1,4 2,0 3,-2 2,2 3,0 2,-6 3,-3 1,-3 -1,-5 8,-3 3,-4 0,-2 2,0 3,-3 0,-7 9,-1 8,4 1,3 6,4 0,16 7,7 1,1 7,2 4,4 4,2 -1,2 -4,-2 -6,-2 -2,5 -2,4 -5,-2 -7,-3 -3,3 -4,-2 -10,2 -1,8 1,2 -1,7 6,5 0,1 9,2 0,2 3,4 -2,5 -7,8 14,-1 2,7 5,6 2,1 3,3 2,0 4,-8 4,-4 3,-17 0,-3 3,-3 2,-8 8,3 -1,4 -5,6 -3,4 0,3 2,-3 2,2 7,4 1,4 0,3 -4,0 2,2 2,-4 2,-6 2,-6 4,-2 0,0 -3,5 -3,-7 0,-2 -2,0 -4,-4 -2,-4 7,-3 2,-9 0,-5 5,-6 0,-1 0,1 2,-10 4,-2 -1,3 -5,-1 -6,-3 -2,-2 -2,-1 0,-1 -2,-9 -5,-3 1,-7 0,-7 -2,-1 -3,-1 0,0 2,-77 0zM267 114l2 -2,4 0,-4 3,-2 0,0 -1zM278 65l-3 -3,0 -2,2 0,6 0,5 3,0 2,-10 0zM277 116l1 -2,2 1,-1 3,-2 -2zM240 53l-2 2,-7 -2,2 -2,4 -2,3 4zM239 39l-6 -1,-1 -1,6 0,1 2zM231 31l4 2,-1 2,-4 2,-3 -2,-1 -5,5 1zM255 56l-12 -2,-1 -6,-3 -2,-6 -1,-3 -2,1 -2,6 0,3 2,6 0,2 2,-1 2,5 3,8 0,4 -1,11 0,3 2,0 2,-1 2,-5 1,-17 0zM191 35l4 1,-1 2,-5 1,-4 -2,2 -2,4 0zM192 31l3 1,-8 1,3 -2,2 0zM346 158l-4 6,2 -1,2 0,-1 2,6 1,0 3,2 -1,1 4,-1 3,-3 0,-1 -4,-3 3,-2 0,2 -1,-2 -1,-9 0,0 -1,2 -1,-2 -1,3 -3,3 -5,4 -4,1 0,0 1zM267 102l6 3,0 2,3 0,1 2,-2 1,-4 -1,-2 -2,-7 5,-1 -3,-3 0,2 -2,1 -7,2 0,1 2,1 -1,2 1zM281 67l3 -2,10 5,0 3,5 -2,3 4,7 2,5 6,-5 3,11 4,4 4,4 0,-1 4,-5 5,-7 -6,-4 0,0 3,8 6,1 4,-1 3,-10 -4,7 7,-13 -4,-4 -2,1 -1,-8 -5,0 2,-8 0,-2 -1,2 -3,11 -1,-1 -2,1 -2,3 -5,-2 -3,-10 -4,2 -2,-3 -3,-4 -2,-2 2,-5 1,-10 -2,-10 -2,-3 -2,3 -2,-4 0,-1 -5,3 -5,2 -2,8 -1,-2 3,2 3,2 -4,7 -2,5 5,0 4,5 -2zM237 58l12 1,-5 5,-3 1,-3 4,-3 0,-2 -7,4 -4zM159 47l10 -8,8 -1,0 4,-2 2,-12 4,-4 -1zM131 148l3 0,-1 4,3 3,-6 -4,0 -3,1 0zM207 28l13 3,3 5,-9 -2,-6 -1,3 -1,-4 -2,0 -2zM157 169l-6 -2,-4 -3,-3 -1,-1 -3,8 2,6 7zM162 56l11 1,6 4,-10 5,-4 4,0 2,-7 3,-1 -2,-7 -3,6 -10,-3 -3,9 -1zM201 48l5 0,0 2,-1 3,-10 1,-7 2,-4 0,0 -1,5 -3,-12 1,-4 -1,4 -6,2 -1,8 2,5 3,5 0,-4 -5,3 -2,2 0,3 5zM204 63l3 3,3 8,10 5,-1 2,-4 1,1 2,-1 1,-9 -2,-21 3,-1 -2,-4 -1,-3 0,-3 -4,14 -2,-6 -1,-10 1,-1 -2,6 -2,-9 -2,5 -6,7 -3,3 1,-2 3,7 -2,4 3,3 -3,2 2,2 5,2 -2,-2 -6,2 0,3 0zM221 65l-3 -3,3 -3,4 1,5 0,0 1,-2 3,4 2,-1 5,-4 2,-3 -1,-9 -6,0 -1,6 0zM204 61l4 -1,2 2,-3 3,-4 -4,1 0zM226 43l3 3,-2 7,-4 1,-3 -1,0 -4,-5 1,0 -5,11 -2zM233 20l2 -2,3 -1,-1 -1,6 -1,4 4,9 2,2 5,4 2,-9 6,-11 0,-3 -3,0 -2,2 -2,-5 0,-3 -2,-2 -3,2 -2zM246 11l12 -3,5 -2,3 0,3 2,2 -4,9 -1,10 0,8 -1,19 1,11 3,0 2,-16 6,6 0,-11 5,-5 6,-7 2,-9 1,4 0,-2 2,3 3,-13 7,1 2,5 -1,0 2,-8 3,-7 -1,-8 1,-10 -1,0 -3,5 -1,-1 -5,2 0,7 2,-4 -3,-4 -2,2 -2,5 -1,1 -3,-4 -2,-1 -3,9 1,5 -3,-16 0,-5 -2,-6 -5,0 -2zM291 92l-2 1,-3 0,-1 -2,2 -3,2 0,2 1,0 3zM233 82l1 2,-1 1,-4 -1,-2 0,-4 -2,4 -3,6 3zM321 164l4 0,3 2,-7 -2zM322 174l1 2,5 0,-3 2,-3 -2,-1 -1,1 -1z" data-name="Canada"><title>加拿大 · Canada · 1.77 亿美元 · 人均 4.32 美元</title></path>
+        <path class="c b-m-4 b-pc-3 r-core" d="M159 167l77 0,0 -2,1 0,1 3,7 2,7 0,3 -1,9 5,1 2,1 0,2 2,3 2,1 6,-3 5,1 1,11 -4,-1 -2,1 0,6 0,5 -5,9 0,3 -2,4 -7,4 2,0 4,2 4,-9 3,-2 5,1 2,1 0,0 -1,1 0,0 1,-11 3,5 0,-5 0,-1 4,-2 2,-2 -2,2 4,-3 4,1 -3,-2 -1,0 -3,0 4,-2 -1,2 1,2 8,-2 2,-8 4,-6 7,0 4,4 10,-1 5,-2 0,-2 -2,-3 -6,0 -2,-3 -5,-3 1,-4 -2,-9 1,1 3,-4 0,-3 -2,-4 0,-4 1,-7 5,0 6,-1 0,-4 -2,-5 -9,-5 -1,-1 2,-3 -1,-7 -7,-5 0,0 1,-7 0,-11 -4,-6 0,-4 -4,-6 -2,-11 -18,1 -6,-1 -3,2 -9,-2 -9,4 0,1 4,1 -1,-1 -6zM68 258l2 2,-2 2,-2 -2,1 -2,1 0zM38 123l2 0,0 2,-2 1,-3 -2,3 -1zM74 133l3 1,-5 4,-2 -3,4 -2zM108 81l0 42,6 2,4 4,6 -4,6 6,4 7,5 3,0 2,-2 2,-4 -2,0 -4,-4 -3,-1 -4,-8 0,-9 -6,-7 -2,-4 1,-9 -4,-3 1,1 3,-10 3,0 -7,3 -1,0 -1,-10 8,2 2,-2 3,-6 3,-1 2,-4 2,-1 2,-18 6,0 -1,9 -5,3 0,8 -7,2 -5,-3 1,-1 0,-2 1,-2 -2,0 1,-1 -2,-5 2,0 -4,-1 -1,-4 0,-4 -3,0 -2,-2 -2,1 -2,3 -5,4 1,2 -3,2 1,2 -2,0 -2,-2 0,2 -2,-5 2,-2 -1,-4 0,-4 -1,-5 -4,10 -4,2 0,0 2,6 0,-10 -9,-4 -2,1 -2,5 0,4 -3,0 -2,3 -2,8 -3,3 0,4 -3,4 1,2 3,2 -1,4 0,0 1,4 1,3 0,13 2,4 -1,7 3zM23 108l8 2,-2 2,-3 -2,-3 0,0 -2z" data-name="United States of America"><title>美国 · United States of America · 31.92 亿美元 · 人均 9.39 美元</title></path>
+        <path class="c" d="M743 166l-2 2,-3 1,0 3,-1 2,-6 -1,-2 6,-7 2,3 6,-2 1,0 2,-3 -2,-10 0,-4 -1,-1 0,-1 2,-6 0,-1 1,-5 3,-1 2,-2 -1,-4 0,0 -3,-2 0,1 -3,-4 -3,-8 1,-2 -3,-7 -4,-8 2,0 12,-1 0,-4 -3,-4 2,0 -4,-3 -1,-3 -5,2 1,1 -3,4 0,0 -6,-5 0,-6 2,-1 -1,0 -1,-2 -3,-2 0,-2 -2,3 -7,3 2,0 -3,6 -4,4 0,10 4,3 -2,4 0,4 2,0 -1,4 0,1 -1,-4 -3,2 -2,0 -1,2 -1,-2 -2,2 -2,10 -1,11 -4,5 1,1 4,3 -1,3 1,0 2,3 0,7 -4,-1 2,3 3,6 9,2 -2,4 2,4 -1,6 5,3 0,2 2z" data-name="Kazakhstan"><title>Kazakhstan · 暂无估算</title></path>
+        <path class="c" d="M655 193l0 -12,8 -2,7 4,2 3,8 -1,4 3,-1 3,2 0,0 3,4 0,2 1,1 -2,5 -3,1 0,-2 3,7 2,-4 2,-3 0,0 -3,-3 1,-3 4,-2 0,-1 1,2 1,1 3,-2 3,-3 -1,0 -2,-7 -3,-5 -4,-1 -3,-4 0,-1 -4,-4 -1,-5 3,1 1,-4 0z" data-name="Uzbekistan"><title>Uzbekistan · 暂无估算</title></path>
+        <path class="c" d="M892 322l10 4,3 3,1 1,4 2,1 1,-3 1,1 2,4 4,2 0,0 2,4 2,0 1,-8 -2,-5 -6,-4 -1,-4 2,0 2,-2 1,-4 -1,0 -18zM924 325l1 3,-2 -2,-4 -3,0 -1,5 3zM920 331l-4 2,-4 -2,0 -1,4 0,1 -1,0 1,2 0,2 -2,0 -1,2 0,0 2,-3 2zM930 330l3 3,0 1,-2 -1,-1 -3z" data-name="Papua New Guinea"><title>Papua New Guinea · 暂无估算</title></path>
+        <path class="c b-m-2 b-pc-0 r-emerging" d="M892 322l0 18,-3 -2,-7 0,3 -3,-2 -5,-12 -5,-2 1,0 -2,-2 -1,5 -1,-1 -1,-4 0,-4 -3,5 -2,4 1,1 6,3 1,3 -3,3 -1,10 2zM847 340l0 1,-1 2,-3 1,1 -3,3 -1zM873 334l1 -4,0 2,-1 2zM827 304l-1 2,2 3,-1 1,4 3,-4 0,-1 4,-2 2,-1 7,-1 -1,-3 1,-1 -1,-3 -1,-4 1,-1 -2,-4 0,0 -4,-3 -3,0 -2,0 -3,2 -2,2 4,6 -2,3 1,2 -1,4 -8,5 1zM859 323l3 1,1 2,-2 -1,-6 -1,1 -1,3 0zM852 326l-2 -2,3 0,0 1,-1 1zM855 309l2 3,0 2,-1 0,-1 2,2 1,-1 1,-2 -6,1 -3zM841 313l4 -1,2 -2,-1 4,-12 0,-1 2,3 3,7 -2,-1 1,-1 0,-3 2,2 4,0 1,2 3,0 2,-1 1,-1 -1,1 -3,-3 2,-1 -1,1 -1,-2 -2,0 -3,-2 1,1 7,-2 1,-1 -1,0 -5,-1 0,-1 -2,3 -8,3 -4,5 2zM834 344l-4 -2,3 -1,2 2,-1 1zM837 339l4 -1,0 1,-4 1,-4 0,0 -1,4 0zM828 338l2 0,1 1,-7 1,3 -2,1 0zM801 333l1 1,5 0,1 -1,5 1,1 2,7 2,-3 1,-22 -4,-1 -1,-2 0,2 -3,6 2zM790 318l1 4,2 0,2 2,-1 7,-3 0,-9 -8,-6 -8,-2 -5,-9 -9,0 -1,6 0,9 9,2 0,3 2,3 4,-1 2,3 1z" data-name="Indonesia"><title>印度尼西亚 · Indonesia · 1.77 亿美元 · 人均 0.63 美元</title></path>
+        <path class="c b-m-1 b-pc-1 r-emerging" d="M309 477l3 4,7 3,-1 2,-9 -1,0 -8zM340 402l-2 13,3 2,0 2,1 2,0 1,-2 4,-5 2,-8 1,0 6,-1 1,-3 0,-3 -1,-1 1,1 3,1 1,2 -1,1 2,-5 3,-1 5,-3 0,-2 2,-1 3,3 2,3 1,-1 3,-4 2,-1 4,-4 3,1 4,2 2,-11 -1,-1 -5,-2 0,-1 -1,0 -4,3 -4,2 -11,1 -1,-1 -2,0 -1,-1 -5,1 -1,-1 -4,2 -6,1 -1,-1 -6,3 -2,1 -6,-2 -9,2 -3,1 -6,3 -4,-1 -2,1 -6,3 -1,1 -4,2 -2,4 0,1 2,1 -2,3 0,6 6,9 3,0 2,-3 4,8 1,5 -5,1 1,0 3,-11 10z" data-name="Argentina"><title>阿根廷 · Argentina · 0.50 亿美元 · 人均 1.09 美元</title></path>
+        <path class="c b-m-1 b-pc-1 r-emerging" d="M309 477l0 8,5 0,-3 3,-8 -2,-7 -5,-3 -4,9 5,3 -4,2 -2,2 1zM307 364l3 6,-1 2,3 8,2 0,-1 3,-3 1,-1 6,1 2,-3 4,-1 6,-2 3,2 9,-1 6,-3 2,1 6,-1 1,-2 6,1 4,-1 1,1 5,0 1,1 2,-1 1,-2 11,-3 4,0 4,1 1,2 0,1 5,10 1,-3 0,-4 2,0 4,-1 0,-10 -6,-2 -13,1 -3,3 -3,-4 -1,3 -3,0 -6,4 1,1 -7,-2 -1,-1 5,-1 -1,3 -13,-1 -7,1 0,5 -15,-1 -11,2 -3,2 -19,0 -8,2 -3z" data-name="Chile"><title>智利 · Chile · 0.35 亿美元 · 人均 1.79 美元</title></path>
+        <path class="c" d="M581 328l1 5,3 5,-5 1,-1 9,3 1,0 3,-2 0,-5 -5,-1 1,-7 -2,-5 0,-2 -11,-4 -1,-2 1,-1 2,-4 0,-4 -6,-11 1,0 -1,1 -2,3 -1,3 1,3 -4,2 -5,3 -4,3 -13,2 -2,8 3,1 -2,8 -2,5 0,3 3,4 -1,3 3,-1 4,2 0,-4 4,-2 10,0 5z" data-name="Dem. Rep. Congo"><title>Dem. Rep. Congo · 暂无估算</title></path>
+        <path class="c" d="M616 320l-2 -3,0 -10,3 -4,4 -2,4 0,11 -12,0 -6,6 -2,-2 8,-5 11,-6 7,-9 7,-4 6z" data-name="Somalia"><title>Somalia · 暂无估算</title></path>
+        <path class="c" d="M609 328l-4 -3,0 -1,-11 -6,0 -3,3 -5,-3 -7,4 -3,1 0,1 3,2 0,4 2,4 1,3 -3,3 1,-2 3,0 10,2 3,-4 2,-3 6z" data-name="Kenya"><title>Kenya · 暂无估算</title></path>
+        <path class="c" d="M568 292l-3 -2,0 -3,-3 -7,-1 0,3 -9,2 0,0 -12,3 0,0 -6,33 0,2 10,3 1,-5 3,-1 10,-6 8,-1 6,0 -5,-2 -1,0 -4,-1 0,-2 1,1 2,-3 4,-1 0,-3 -2,-3 3,-6 0,-2 -3,-2 0,-2 4,-2 1,2 1z" data-name="Sudan"><title>Sudan · 暂无估算</title></path>
+        <path class="c" d="M566 260l0 11,-2 0,-3 9,1 0,2 4,-4 2,-2 3,-6 1,1 1,-3 2,-8 1,0 -3,-3 -3,0 -1,4 0,-2 -2,0 -7,-2 0,-1 -3,1 -4,3 -3,2 -10,-2 -3,-1 -5,3 -1,22 11z" data-name="Chad"><title>Chad · 暂无估算</title></path>
+        <path class="c" d="M301 260l0 4,-8 -1,6 0,-1 -3,-2 0,1 -1,4 1z" data-name="Haiti"><title>Haiti · 暂无估算</title></path>
+        <path class="c" d="M301 264l-1 -1,1 -4,5 1,4 3,-1 1,-5 -1,-2 3,-1 -2z" data-name="Dominican Rep."><title>Dominican Rep. · 暂无估算</title></path>
+        <path class="c b-m-1 b-pc-0 r-emerging" d="M760 17l6 -2,6 4,6 6,0 5,-6 1,-8 -2,-5 -2,-2 -5,-4 -1,7 -4zM786 28l7 3,-1 3,-16 2,5 -8,5 0zM886 47l7 0,10 3,-2 4,-10 0,-5 1,-6 -3,2 -4,4 -1zM912 51l7 2,-4 2,-4 -1,-5 -2,1 -2,5 1zM889 62l2 -2,4 -1,4 2,0 2,-10 -1zM625 20l9 -2,1 2,4 -3,4 2,-11 4,-3 -1,2 -2,-6 0zM563 147l-8 0,0 -2,4 -1,4 1,0 2zM649 60l6 -5,0 -2,15 -7,9 -1,5 -2,5 -1,2 2,-2 2,-18 6,-9 5,-8 10,1 4,5 5,-11 -1,-1 -2,-5 -1,0 -3,3 -1,0 -3,5 -4,-2 -1zM897 149l1 8,4 10,-4 -1,-2 5,3 4,0 2,-2 -2,-2 3,0 -18,-2 -4,1 -5,2 -2,-1 -1,1 -1,1 2zM863 190l0 -2,1 0,1 -4,-1 -3,2 -1,4 0,5 -11,-7 2,-4 0,-1 -3,-4 -3,-4 -1,-5 -11,-3 -1,-4 -2,-7 1,-2 2,1 1,0 2,-4 5,0 2,-4 2,-9 -3,-4 3,-7 1,-6 0,-4 -4,-9 1,-4 -2,0 -2,-9 -3,-3 4,1 2,-3 2,-7 -1,-1 -2,-6 -1,-13 6,-2 -2,-3 0,-6 -5,-4 1,-4 -2,-2 2,-6 -9,-3 -3,1 -2,-7 4,-3 0,0 -2,-3 -1,-3 1,-1 -4,-5 -1,-11 4,-10 1,-2 2,2 2,-2 1,0 1,-2 2,4 3,-1 1,-4 0,0 1,-4 -2,-4 0,-3 2,-10 -4,-4 0,-6 4,0 3,-3 -2,-3 7,2 2,2 0,2 3,0 1,1 1,-6 6,5 10,-2 2,-7 -5,-15 -3,-9 -6,2 -1,2 -2,-1 -2,4 -1,0 -1,-3 1,0 -2,4 -1,1 -6,-5 -1,-2 -2,-2 0,-4 -1,-1 -2,-2 0,1 -2,-2 -2,-6 1,-1 -4,4 -1,-3 -2,-3 -4,1 -3,-4 0,-4 -2,-1 -4,-1 -1,1 -1,-1 -4,2 -3,3 -3,-3 -2,8 -7,2 -3,-5 -3,2 -3,-3 -3,2 -4,-3 -5,2 -4,-4 -3,0 -3,10 -4,5 3,7 1,11 5,2 3,0 3,-3 2,-4 1,-13 -3,-2 0,5 4,0 7,6 2,0 -2,-2 -2,2 -2,7 3,2 -1,-2 -3,7 -5,5 2,2 -3,-3 -3,2 -3,-2 -3,7 2,2 2,-3 1,0 3,2 1,4 -1,1 -3,15 -6,2 0,-2 3,3 1,2 -2,5 0,4 -2,4 3,3 -4,-3 -2,1 -2,8 1,14 8,2 -3,-3 -4,-3 0,1 -2,-2 -6,5 -5,2 -4,2 -1,8 1,0 3,-2 4,1 2,1 3,0 7,3 3,-2 3,-5 7,3 1,1 -2,3 -1,3 -5,-1 -3,1 -3,-3 0,-1 -3,3 -5,-4 -4,5 -4,-1 -3,2 0,1 3,-1 5,3 0,-1 -3,4 -2,6 -1,5 3,-2 -4,0 -6,17 -1,-2 -3,3 -4,3 0,6 -3,7 0,1 -2,7 0,3 1,6 -3,5 0,1 -3,2 -2,7 -2,5 1,-4 2,6 1,1 3,2 -2,9 0,8 5,-1 3,-12 7,7 2,3 -1,1 3,2 -1,4 -1,9 1,1 2,11 1,0 -4,11 1,4 3,1 3,-1 2,3 4,5 2,2 -5,5 2,5 -1,5 1,2 -1,5 1,-2 -5,3 -2,25 3,3 3,7 4,11 -1,6 1,2 2,0 4,3 1,4 -1,15 0,5 5,3 -2,-2 -3,1 -2,15 1,8 2,-996 2,14 9,0 3,2 1,-1 -4,8 1,5 4,-3 2,-4 1,0 4,-1 1,-3 0,-6 -3,0 -2,-6 0,-2 -1,1 -2,-4 1,2 2,-2 2,1000 0,-4 2,-3 0,5 7,0 3,-5 -1,-11 4,-8 5,-1 2,-4 -3,-7 3,-1 -1,-3 2,-4 -1,-4 7,0 1,3 1,0 6,-3 0,-1 3,1 2,-5 2,0 4,-5 1,0 4,-4 4,-4 -17,1 -5,2 -3,1 -2,4 -1,15 -12,2 -6,-4 0,-1 4,-7 4,-2 -5,-8 2,-7 7,3 2,-11 2,0 -3,-4 -1,-3 2,-9 -1,-9 1,-20 18,5 0,1 2,3 1,2 -2,3 1,4 4,-4 17,-5 7,-9 10,-4 2,-2 0,-2 -1,-4 3zM0 72l7 1,-3 2,-4 0,997 0,-1 -1,-996 -2zM593 178l1 -1,5 2,2 0,0 1,-7 3,-1 -1,0 -1,-3 -1,3 -2z" data-name="Russia"><title>俄罗斯 · Russia · 0.83 亿美元 · 人均 0.58 美元</title></path>
+        <path class="c" d="M284 238l2 1,0 3,-2 -4zM283 243l2 5,-3 -3,1 -2z" data-name="Bahamas"><title>Bahamas · 暂无估算</title></path>
+        <path class="c" d="M330 474l3 -3,3 1,1 -1,3 1,-1 2,-4 1,-1 -1,-3 1,-1 -1z" data-name="Falkland Is."><title>Falkland Is. · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-2 r-core" d="M542 25l1 -2,4 0,13 7,-7 2,-2 5,-2 1,-1 5,-4 0,-6 -4,3 -2,-4 -1,-6 -6,-2 -4,8 -3,1 3,4 -1zM586 81l-7 3,2 -4,-4 -2,-4 2,-2 4,-2 2,-7 -1,-3 -3,-3 2,-1 3,-5 -1,-1 3,-2 0,-9 15,1 1,-1 2,-3 0,-2 4,0 6,2 2,-1 5,-3 5,-2 -2,-6 4,-3 1,-4 -2,-2 -14,2 -3,8 -3,5 -5,12 -15,12 -10,6 -2,5 0,4 -4,10 -1,9 4,-4 1,3 3zM576 23l-4 3,-8 1,-8 -1,-1 -2,-4 0,-3 -3,9 -1,4 1,3 -2,12 4zM569 37l-7 2,-4 -1,1 -2,-1 -2,6 -1,1 2,4 2z" data-name="Norway"><title>挪威 · Norway · 0.17 亿美元 · 人均 3.04 美元</title></path>
+        <path class="c" d="M370 6l9 -4,10 0,4 -2,32 0,17 5,-5 3,-26 1,2 1,10 -1,8 3,5 -2,3 2,-3 4,20 -5,9 1,1 3,-13 6,-9 1,7 1,-6 8,0 7,4 4,-5 0,-4 2,5 3,1 5,-3 0,3 5,-6 0,3 2,-1 2,-7 1,3 4,0 2,-5 -2,-2 1,4 2,4 3,1 4,-5 1,-6 -5,1 3,-3 3,11 1,-15 8,-11 1,-3 2,-4 5,-6 3,-10 3,-2 3,-1 6,-5 3,1 4,-2 7,-4 0,-5 -3,-5 0,-9 -12,-2 -7,-4 -4,1 -4,-2 -1,3 -6,4 -2,2 -5,-7 3,-4 -2,1 -6,8 1,-7 -5,-3 1,-2 -1,3 -5,-7 -11,-4 -3,0 -2,-7 -3,-20 0,-8 -5,13 -3,-12 -1,-7 -3,1 -2,20 -6,2 -2,-8 -2,2 -3,10 -4,4 -1,-1 -3,15 -3,9 0,3 2,7 -4,16 6,-6 -4,0 -3z" data-name="Greenland"><title>Greenland · 暂无估算</title></path>
+        <path class="c" d="M691 462l5 1,-1 3,-4 0,0 -4z" data-name="Fr. S. Antarctic Lands"><title>Fr. S. Antarctic Lands · 暂无估算</title></path>
+        <path class="c" d="M847 340l7 -2,-7 3,0 -1z" data-name="Timor-Leste"><title>Timor-Leste · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-0 r-emerging" d="M545 397l2 -2,1 2,3 1,4 -2,0 -11,3 3,0 3,2 0,5 -4,2 1,4 -1,4 -5,7 -5,5 1,2 6,-1 4,-2 0,-1 3,2 2,2 -2,2 0,-2 6,-11 12,-6 4,-9 0,-7 3,-5 -2,-1 -5,1 -3,-6 -9zM580 398l-1 -1,-1 0,-3 4,2 2,1 0,3 -4,-1 -1z" data-name="South Africa"><title>南非 · South Africa · 0.19 亿美元 · 人均 0.30 美元</title></path>
+        <path class="c" d="M580 398l1 1,-3 4,-1 0,-2 -2,3 -4,1 0,1 1z" data-name="Lesotho"><title>Lesotho · 暂无估算</title></path>
+        <path class="c b-m-2 b-pc-1 r-emerging" d="M175 221l6 0,11 4,7 0,0 -1,5 0,7 7,3 1,1 -2,3 0,6 7,1 3,5 2,-2 10,2 5,4 5,4 2,8 -2,2 -1,1 -5,9 -2,1 2,-2 4,-1 4,-2 -1,-1 2,-6 0,0 2,-1 0,3 3,-4 0,-1 4,-5 -4,-2 0,-5 1,-19 -7,-6 -5,-1 -2,2 -2,-3 -4,-8 -9,-1 -2,-3 -2,0 -2,-5 -4,-2 -6,-5 -2,0 5,9 10,3 7,1 0,2 3,-2 2,0 -2,-6 -4,0 -4,-8 -5,2 0,1 -3,-4 -3,-4 -9z" data-name="Mexico"><title>墨西哥 · Mexico · 1.77 亿美元 · 人均 1.36 美元</title></path>
+        <path class="c" d="M340 402l2 -1,9 6,1 2,-1 5,-4 2,-3 0,-5 -1,-1 -2,2 -11z" data-name="Uruguay"><title>Uruguay · 暂无估算</title></path>
+        <path class="c b-m-2 b-pc-0 r-emerging" d="M352 412l-1 -1,1 -2,-1 -2,-9 -6,-2 1,11 -10,0 -3,-1 -1,-2 0,1 -5,-3 0,-1 -5,-6 -1,-1 -5,2 -6,-2 -3,0 -2,-5 0,-1 -7,-11 -4,-3 -3,1 -5,-4 1,-5 3,-6 0,0 -5,-2 2,-3 0,-1 -1,-1 -1,0 -1,-3 -4,3 -3,1 -3,5 -3,3 0,1 -9,-1 -4,2 -1,0 -1,-2 0,0 -2,5 0,1 -1,2 3,4 1,6 -4,-3 -1,0 -4,-1 0,5 1,6 -3,0 -1,2 0,0 1,2 2,-2 3,3 4,5 -1,3 0,1 -2,8 1,4 -6,3 7,1 0,0 2,-2 2,1 1,5 1,0 2,2 -1,8 2,2 2,-1 1,3 0,10 1,8 5,4 1,3 6,-2 5,-9 11,-2 14,-5 12,-3 3,-7 1,-8 5,-3 3,-1 8,-12 15z" data-name="Brazil"><title>巴西 · Brazil · 1.54 亿美元 · 人均 0.72 美元</title></path>
+        <path class="c" d="M307 346l3 0,5 -3,4 -1,-1 5,3 3,11 4,1 7,5 0,0 2,2 3,-1 5,-1 1,-2 -3,-8 1,-2 8,-4 -1,-1 2,-1 -2,-4 0,-2 2,-2 1,-3 -8,1 -2,-3 -6,1 -3,-1 -4,2 -7,-2 -4z" data-name="Bolivia"><title>Bolivia · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-0 r-emerging" d="M306 327l-3 0,-5 3,-1 3,-3 3,3 4,0 1,1 1,1 1,3 0,2 -2,0 5,3 0,2 4,-2 7,1 4,-3 6,-16 -11,-1 -3,-10 -18,-4 -3,1 -1,-1 -3,3 -4,0 3,2 0,1 2,2 -1,2 -5,3 -1,3 -3,1 -4,6 6,6 0,2 2,-1 2,2 2z" data-name="Peru"><title>秘鲁 · Peru · 0.15 亿美元 · 人均 0.44 美元</title></path>
+        <path class="c b-m-1 b-pc-0 r-emerging" d="M314 312l-2 -3,-1 1,-5 0,0 2,2 0,0 1,-2 1,1 4,-1 9,-2 -2,1 -2,-2 -2,-6 0,-6 -6,-6 -1,-4 -4,5 -6,-1 0,0 -5,-1 -4,1 -2,0 -2,5 -2,0 -4,2 -1,4 0,6 -4,0 2,-2 1,-3 3,-1 4,2 0,1 4,1 2,5 0,2 2,6 0,-1 4,1 4,-1 1,2 5z" data-name="Colombia"><title>哥伦比亚 · Colombia · 0.30 亿美元 · 人均 0.58 美元</title></path>
+        <path class="c" d="M285 291l0 2,-1 2,-2 -2,1 -1,-3 -2,-3 2,1 2,-3 1,0 -2,-1 1,-1 -2,-3 1,0 -4,4 2,6 -3,5 3z" data-name="Panama"><title>Panama · 暂无估算</title></path>
+        <path class="c" d="M271 288l-1 1,0 3,-6 -5,0 1,-2 -1,-1 -2,1 -1,6 1,3 3z" data-name="Costa Rica"><title>Costa Rica · 暂无估算</title></path>
+        <path class="c" d="M268 285l-6 -1,-6 -5,3 -1,0 -1,3 -1,2 -2,5 -1,-1 12z" data-name="Nicaragua"><title>Nicaragua · 暂无估算</title></path>
+        <path class="c" d="M269 273l-5 1,-2 2,-3 1,0 1,-2 1,-1 -3,-4 -1,0 -2,4 -2,8 -1,5 3z" data-name="Honduras"><title>Honduras · 暂无估算</title></path>
+        <path class="c" d="M252 275l4 1,0 2,-6 -1,2 -2z" data-name="El Salvador"><title>El Salvador · 暂无估算</title></path>
+        <path class="c" d="M244 274l1 -4,4 0,-3 -3,1 0,0 -2,5 0,0 6,3 0,-3 2,0 2,-2 2,-6 -3z" data-name="Guatemala"><title>Guatemala · 暂无估算</title></path>
+        <path class="c" d="M252 265l2 -2,1 0,0 6,-2 2,-1 0,0 -6z" data-name="Belize"><title>Belize · 暂无估算</title></path>
+        <path class="c" d="M331 301l0 1,-6 3,-5 -1,1 0,0 4,3 1,-6 4,-2 0,-4 -6,1 -1,-1 -4,1 -4,-6 0,-2 -2,-5 0,-1 -2,-1 -4,-2 0,1 -4,3 -3,2 -1,-2 1,1 3,-1 2,1 2,1 0,1 -2,-1 -4,3 -1,1 -2,1 2,2 0,2 3,5 -1,4 2,1 -2,7 0,-2 1,1 1,2 0,2 2,0 2,3 1,-2 1,1 2,-3 1,-1 2,2 3z" data-name="Venezuela"><title>Venezuela · 暂无估算</title></path>
+        <path class="c" d="M343 310l-2 0,-4 1,-3 -1,-1 -3,2 -3,-2 -2,0 -1,-4 -3,1 -2,3 -1,-1 -2,2 -1,7 6,-2 6,4 6z" data-name="Guyana"><title>Guyana · 暂无估算</title></path>
+        <path class="c" d="M349 309l-4 -1,-1 2,-1 0,-3 -4,-1 -2,2 -6,9 1,-1 2,1 4,-1 4z" data-name="Suriname"><title>Suriname · 暂无估算</title></path>
+        <path class="c b-m-2 b-pc-2 r-core" d="M357 303l-4 6,-4 0,1 -4,-1 -4,1 -2,3 1,4 3zM517 165l5 2,-1 5,-2 0,-2 3,0 1,1 0,1 1,1 3,-1 1,0 2,2 1,0 1,-3 2,-5 -1,-4 1,-1 2,-3 1,-9 -2,-1 -2,1 -2,1 -7,-5 -5,-4 -1,-1 -3,4 -1,5 1,-1 -4,2 2,7 -3,1 -3,2 -1,5 5,5 1zM524 189l2 -1,0 5,-2 -1,0 -3z" data-name="France"><title>法国 · France · 2.60 亿美元 · 人均 3.80 美元</title></path>
+        <path class="c" d="M291 315l-1 4,-3 3,-3 1,-2 5,-2 1,-1 -2,-2 0,1 -5,0 -1,-1 1,-2 -1,0 -3,3 -5,3 -2,4 3,3 0,3 1z" data-name="Ecuador"><title>Ecuador · 暂无估算</title></path>
+        <path class="c" d="M316 263l2 1,-1 1,-4 0,1 -2,2 0z" data-name="Puerto Rico"><title>Puerto Rico · 暂无估算</title></path>
+        <path class="c" d="M285 263l3 2,-4 0,-2 -1,3 -1z" data-name="Jamaica"><title>Jamaica · 暂无估算</title></path>
+        <path class="c" d="M271 249l5 1,4 2,2 -1,5 4,3 1,0 1,4 1,-2 1,-8 0,2 -1,-3 -1,-2 -3,-8 -2,-1 0,1 -1,-3 0,-3 2,-3 0,3 -2,4 -2z" data-name="Cuba"><title>Cuba · 暂无估算</title></path>
+        <path class="c" d="M587 378l-9 -2,-1 -3,-4 -4,-3 -4,5 0,5 -5,4 -2,0 1,3 0,4 3,0 10,-4 6z" data-name="Zimbabwe"><title>Zimbabwe · 暂无估算</title></path>
+        <path class="c" d="M582 377l-7 5,-4 5,-4 1,-2 -1,-5 4,-2 0,0 -3,-3 -3,0 -8,3 0,0 -11,6 -1,1 1,5 -1,3 4,4 4,1 3,4 1z" data-name="Botswana"><title>Botswana · 暂无估算</title></path>
+        <path class="c" d="M555 385l0 11,-4 2,-3 -1,-1 -2,-2 2,-3 -5,-2 -15,-7 -11,0 -2,4 -1,2 1,12 0,2 1,6 0,8 -1,3 0,-5 2,-1 -1,-6 1,0 11,-3 0,0 8z" data-name="Namibia"><title>Namibia · 暂无估算</title></path>
+        <path class="c" d="M454 277l-3 -3,4 -5,5 -1,3 2,3 4,2 6,-14 0,-1 -2,9 -1,-4 -1,-4 1z" data-name="Senegal"><title>Senegal · 暂无估算</title></path>
+        <path class="c" d="M468 280l-2 -6,2 -2,2 1,3 -1,12 0,0 -2,-3 -26,4 0,23 16,0 1,3 0,0 7,-2 3,-6 1,-1 1,-6 0,-6 4,-2 0,-4 5,0 4,-7 1,-3 -6,-3 1,-4 -1,0 -1z" data-name="Mali"><title>Mali · 暂无估算</title></path>
+        <path class="c" d="M453 256l0 -1,11 0,0 -6,3 0,0 -8,9 1,0 -5,10 7,-4 0,3 26,0 2,-12 0,-3 1,-2 -1,-2 2,-3 -4,-3 -2,-6 2,1 -12,-2 -2z" data-name="Mauritania"><title>Mauritania · 暂无估算</title></path>
+        <path class="c" d="M507 298l-2 0,0 -8,-3 -4,2 -3,4 -2,2 1,1 3,-3 6,-1 7z" data-name="Benin"><title>Benin · 暂无估算</title></path>
+        <path class="c" d="M541 250l1 5,2 3,-2 10,-3 3,-1 4,1 3,2 0,-2 2,-3 -3,-2 2,-3 -1,-6 1,-3 -1,-3 0,-4 -2,-4 1,-1 5,-2 -1,-2 1,0 -2,-3 -1,-2 -6,9 -2,2 -3,0 -7,4 -1,17 -11,5 1,1 1,2 -1z" data-name="Niger"><title>Niger · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-0 r-emerging" d="M507 298l1 -7,2 -4,0 -7,2 -3,3 -1,4 2,3 0,3 1,6 -1,3 1,2 -2,4 4,-7 15,-2 1,-3 -2,-2 2,-2 5,-8 1,-4 -5,-5 0z" data-name="Nigeria"><title>尼日利亚 · Nigeria · 0.07 亿美元 · 人均 0.03 美元</title></path>
+        <path class="c" d="M540 279l3 8,-4 0,0 1,3 3,1 3,-3 4,0 4,4 5,0 3,-4 -1,-13 0,0 -3,-3 -3,0 -3,2 -3,2 -2,3 2,2 -1,5 -11,2 -2,0 -2,-1 -1,1 -1z" data-name="Cameroon"><title>Cameroon · 暂无估算</title></path>
+        <path class="c" d="M502 284l0 2,3 4,0 8,-2 1,-1 -3,-1 -9,-1 -2,0 -1,2 0z" data-name="Togo"><title>Togo · 暂无估算</title></path>
+        <path class="c" d="M500 284l2 8,0 4,1 3,-8 3,-3 -1,-1 -3,2 -6,-1 -8,8 0z" data-name="Ghana"><title>Ghana · 暂无估算</title></path>
+        <path class="c" d="M478 287l3 0,2 -1,0 1,2 -1,3 2,2 -1,2 1,1 4,-2 6,1 3,-5 0,-8 2,0 -4,-3 -2,1 -5,1 -1,-1 -3,1 -1z" data-name="Côte d'Ivoire"><title>Côte d'Ivoire · 暂无估算</title></path>
+        <path class="c" d="M462 280l6 0,0 1,4 1,3 -1,3 6,-1 1,1 3,-1 1,0 2,-3 1,-1 -4,-2 1,-2 -5,-4 1,-2 2,-5 -6,4 -2,0 -2z" data-name="Guinea"><title>Guinea · 暂无估算</title></path>
+        <path class="c" d="M454 280l8 0,0 2,-4 2,-4 -4z" data-name="Guinea-Bissau"><title>Guinea-Bissau · 暂无估算</title></path>
+        <path class="c" d="M477 294l-1 3,3 2,0 4,-4 -1,-7 -6,4 -4,1 -1,1 4,3 -1z" data-name="Liberia"><title>Liberia · 暂无估算</title></path>
+        <path class="c" d="M463 290l2 -2,4 -1,2 5,1 0,-4 4,-4 -3,-1 -3z" data-name="Sierra Leone"><title>Sierra Leone · 暂无估算</title></path>
+        <path class="c" d="M485 286l0 -4,3 -4,3 -1,6 -4,4 0,2 6,3 1,-1 3,-3 1,-10 0,0 4,-2 -1,-2 1,-3 -2z" data-name="Burkina Faso"><title>Burkina Faso · 暂无估算</title></path>
+        <path class="c" d="M576 300l-8 1,-5 1,-1 2,-8 -3,-2 2,-1 2,-3 0,-4 4,-4 -7,0 -2,2 -6,8 -1,3 -2,-1 -1,6 -1,2 -3,4 -2,1 3,0 3,5 3,6 7z" data-name="Central African Rep."><title>Central African Rep. · 暂无估算</title></path>
+        <path class="c" d="M551 305l-2 11,-3 4,-2 5,-3 4,-2 -1,-2 1,-2 -2,-2 2,-2 -3,2 -1,-1 -2,3 -1,0 -2,4 2,1 -3,-2 -4,2 -3,-3 -1,-1 -2,8 1,4 -5,3 0z" data-name="Congo"><title>Congo · 暂无估算</title></path>
+        <path class="c" d="M531 309l5 0,1 2,3 1,-2 3,2 4,-1 3,-4 -2,0 2,-3 1,1 2,-2 1,-7 -8,2 -6,5 0,0 -3z" data-name="Gabon"><title>Gabon · 暂无估算</title></path>
+        <path class="c" d="M527 309l4 0,0 3,-5 0,1 -3z" data-name="Eq. Guinea"><title>Eq. Guinea · 暂无估算</title></path>
+        <path class="c" d="M585 338l7 4,1 8,-2 3,1 1,-8 2,0 2,-4 2,-5 5,-6 -1,-5 0,-3 -4,0 -9,6 0,-1 -6,5 2,1 1,3 -1,5 5,2 0,0 -3,-3 -1,0 -7,2 -3,4 0z" data-name="Zambia"><title>Zambia · 暂无估算</title></path>
+        <path class="c" d="M591 341l3 0,1 2,1 10,3 3,0 4,-2 2,-1 -2,0 -4,-5 -3,2 -3,0 -6,-2 -3z" data-name="Malawi"><title>Malawi · 暂无估算</title></path>
+        <path class="c" d="M596 347l8 0,8 -3,1 12,-3 6,-6 2,-7 7,-1 2,3 4,-1 6,-6 4,-2 1,1 3,-2 0,0 -7,-2 -6,4 -6,0 -10,-4 -3,-3 0,0 -3,8 -2,4 2,0 4,1 2,2 -2,0 -4,-3 -3,-1 -4,1 -2z" data-name="Mozambique"><title>Mozambique · 暂无估算</title></path>
+        <path class="c" d="M589 391l-2 2,-2 -2,1 -3,2 0,1 3z" data-name="eSwatini"><title>eSwatini · 暂无估算</title></path>
+        <path class="c" d="M536 328l-2 3,-1 -2,2 -2,1 1zM534 332l11 -1,4 6,4 0,1 -2,2 -1,4 1,2 11,3 -1,2 1,0 5,-6 0,0 9,3 4,-5 1,-6 0,-2 -1,-12 0,-2 -1,-4 1,1 -9,4 -8,-2 -6,1 -2,-3 -7z" data-name="Angola"><title>Angola · 暂无估算</title></path>
+        <path class="c" d="M585 322l0 2,-4 4,0 -5,4 -1z" data-name="Burundi"><title>Burundi · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-2 r-core" d="M599 221l-1 0,-1 2,0 2,1 0,0 1,-1 5,-2 -6,2 -5,3 -1,-1 2z" data-name="Israel"><title>以色列 · Israel · 0.26 亿美元 · 人均 2.63 美元</title></path>
+        <path class="c" d="M600 219l-2 1,1 -3,1 -2,1 0,1 1,-2 3z" data-name="Lebanon"><title>Lebanon · 暂无估算</title></path>
+        <path class="c" d="M638 350l2 9,-1 1,0 -2,-1 1,0 3,-7 24,-5 2,-4 -2,-2 -7,1 -4,1 0,2 -5,-2 -6,1 -4,6 -1,4 -3,0 -3,1 1,3 -5,1 1z" data-name="Madagascar"><title>Madagascar · 暂无估算</title></path>
+        <path class="c" d="M598 225l-1 0,1 -4,1 1,-1 3z" data-name="Palestine"><title>Palestine · 暂无估算</title></path>
+        <path class="c" d="M454 277l4 -1,4 1,-9 1,1 -1z" data-name="Gambia"><title>Gambia · 暂无估算</title></path>
+        <path class="c" d="M526 228l-1 -5,-4 -4,0 -2,2 -2,0 -7,3 -2,2 1,0 1,3 -1,-2 2,1 5,-2 2,1 1,3 2,0 3,-4 3,0 2,-2 1z" data-name="Tunisia"><title>Tunisia · 暂无估算</title></path>
+        <path class="c" d="M476 237l0 -4,9 -4,5 -3,0 -2,6 -2,1 -1,-3 -8,3 -2,7 -2,11 -1,2 -1,6 1,0 7,-2 2,0 2,4 4,2 8,0 9,-1 1,3 5,1 -1,3 4,-17 11,-7 1,0 -1,-33 -23z" data-name="Algeria"><title>Algeria · 暂无估算</title></path>
+        <path class="c" d="M599 222l0 -1,3 1,6 -3,1 4,-6 2,3 3,-6 4,-3 -1,2 -9z" data-name="Jordan"><title>Jordan · 暂无估算</title></path>
+        <path class="c b-m-1 b-pc-3 r-emerging" d="M643 246l7 1,6 -6,0 1,1 2,-2 0,1 3,-2 0,-1 4,-9 -1,-1 -4z" data-name="United Arab Emirates"><title>阿联酋 · United Arab Emirates · 0.59 亿美元 · 人均 5.62 美元</title></path>
+        <path class="c b-m-0 b-pc-2 r-emerging" d="M641 245l0 -2,1 -2,1 2,0 2,-2 0z" data-name="Qatar"><title>卡塔尔 · Qatar · 0.14 亿美元 · 人均 4.67 美元</title></path>
+        <path class="c b-m-0 b-pc-1 r-emerging" d="M633 229l1 5,-5 -2,2 -3,2 0z" data-name="Kuwait"><title>科威特 · Kuwait · 0.11 亿美元 · 人均 2.24 美元</title></path>
+        <path class="c" d="M609 223l-1 -4,6 -4,1 -6,4 -3,5 1,2 4,2 1,0 1,-2 4,2 3,3 2,2 2,-1 2,3 3,-4 0,-2 3,-5 0,-8 -7,-7 -2z" data-name="Iraq"><title>Iraq · 暂无估算</title></path>
+        <path class="c" d="M653 251l1 -4,2 0,-1 -3,2 0,2 3,4 1,3 4,-4 5,-1 1,-1 4,-3 1,-1 2,-1 0,-3 2,-4 1,-4 -6,9 -3,2 -6,-2 -2z" data-name="Oman"><title>Oman · 暂无估算</title></path>
+        <path class="c" d="M785 281l-1 -3,2 -3,4 0,5 1,1 -2,2 1,1 6,-5 2,1 1,-8 1,-2 -4z" data-name="Cambodia"><title>Cambodia · 暂无估算</title></path>
+        <path class="c b-m-2 b-pc-2 r-emerging" d="M792 275l-6 0,-2 3,1 3,-5 -1,0 -2,-2 0,-2 11,1 0,2 5,5 4,-3 1,0 -1,-3 -1,-5 -5,4 -10,-2 -6,-2 -3,2 -3,-5 -7,3 -3,5 -2,1 2,2 0,0 6,6 -2,2 0,2 2,0 3,2 2,-1 4z" data-name="Thailand"><title>泰国 · Thailand · 2.96 亿美元 · 人均 4.12 美元</title></path>
+        <path class="c" d="M798 275l-2 -1,-1 2,-3 -1,1 -4,-4 -7,-5 0,-3 2,0 -6,-2 0,-1 -2,3 -3,2 0,-1 -3,2 0,3 5,3 0,1 2,-2 2,3 2,6 7,0 5z" data-name="Laos"><title>Laos · 暂无估算</title></path>
+        <path class="c" d="M778 258l-5 2,-3 3,5 7,-2 3,2 3,2 6,-3 5,0 -9,-4 -10,-5 3,-3 -1,0 -6,-2 -4,-3 -3,-1 -3,1 1,0 -2,2 -1,0 -5,2 1,3 -9,4 -2,2 1,0 -4,2 0,2 3,0 4,-3 3,0 3,3 0,1 3,1 0,0 3,3 1,2 -1,0 2,-3 3z" data-name="Myanmar"><title>Myanmar · 暂无估算</title></path>
+        <path class="c b-m-2 b-pc-1 r-mfg" d="M790 286l5 -2,-1 -1,5 -2,0 -9,-7 -9,-3 -2,2 -2,-1 -2,-3 0,-3 -5,6 -1,3 -2,3 2,0 1,1 1,3 1,-4 3,-2 4,8 11,2 5,-1 5,-11 9,-1 -2,1 -2,-2 -1z" data-name="Vietnam"><title>越南 · Vietnam · 1.42 亿美元 · 人均 1.41 美元</title></path>
+        <path class="c" d="M863 190l-3 2,0 3,-6 3,0 2,3 2,-1 1,-8 2,-2 -1,2 -4,-3 -2,2 -2,5 -4,4 1,0 -2,4 -1,1 -2,2 2z" data-name="North Korea"><title>North Korea · 暂无估算</title></path>
+        <path class="c b-m-3 b-pc-3 r-core" d="M850 205l7 -3,3 6,-1 5,-8 3,1 -4,-2 -4,2 0,-2 -3z" data-name="South Korea"><title>韩国 · South Korea · 5.32 亿美元 · 人均 10.29 美元</title></path>
+        <path class="c" d="M744 166l12 -6,6 1,1 2,7 1,3 -2,-1 -2,3 -4,9 3,0 2,4 2,9 -1,4 4,6 0,7 -1,4 -3,3 2,3 0,-3 6,1 1,4 0,2 -1,5 4,-1 1,-6 0,-4 3,-7 4,-4 -1,-2 2,2 2,-4 3,-12 3,-3 1,-12 -3,-12 0,-3 -6,-5 -2,-7 -1,-1 -2,1 -4,-2 -3,-7 -3,0 -2z" data-name="Mongolia"><title>Mongolia · 暂无估算</title></path>
+        <path class="c b-m-1 b-pc-0 r-emerging" d="M770 234l0 4,-2 -1,-4 2,-1 6,-2 3,-2 -1,0 5,-2 1,-1 -5,-1 2,-2 -1,4 -5,-7 -1,0 -2,-4 -1,-1 2,2 1,-2 3,1 0,1 8,-5 0,0 3,-2 1,-4 2,-8 7,0 2,-5 1,-1 16,-2 0,-1 2,1 1,-3 1,-2 3,-2 -3,-6 -16,-3 -4,-2 -15,-4 2,-2 -1,-4 -3,1 -1,0 -2,-4 -2,2 -2,6 0,-2 -6,-2 -2,3 -3,3 0,8 -9,0 -2,2 -2,-2 -1,-2 -5,1 -2,8 1,2 -3,3 4,0 2,1 2,0 2,-2 -1,1 3,6 5,-3 4,9 4,14 3,0 -4,1 -1,1 3,2 1,7 0,0 -2,-1 -1,2 -1,6 -4,2 1,2 -1,1 2,-1 1,3 0z" data-name="India"><title>印度 · India · 0.71 亿美元 · 人均 0.05 美元</title></path>
+        <path class="c" d="M757 253l0 4,-3 -6,-3 0,0 2,-4 0,-1 -7,-1 0,2 -3,-2 -1,1 -2,4 1,0 2,7 1,-4 5,2 1,1 -2,1 5z" data-name="Bangladesh"><title>Bangladesh · 暂无估算</title></path>
+        <path class="c" d="M755 236l1 1,0 2,-7 0,-2 -1,3 -4,5 2z" data-name="Bhutan"><title>Bhutan · 暂无估算</title></path>
+        <path class="c" d="M745 236l0 4,-3 0,-11 -3,-9 -4,2 -3,2 -2,12 7,7 1z" data-name="Nepal"><title>Nepal · 暂无估算</title></path>
+        <path class="c" d="M716 212l-2 3,-8 -1,-1 2,2 5,2 1,-2 2,0 2,-8 9,-3 0,-3 3,2 2,2 6,-6 0,-2 2,-2 -1,-3 -4,-13 1,1 -4,4 -1,-2 -2,0 -3,-2 -1,-3 -3,5 1,10 -2,0 -2,2 -2,7 -2,-1 -2,3 -2,-1 -2,3 0,2 -4,-1 -3,2 -1,9 -2,2 1,1 3,4 1z" data-name="Pakistan"><title>Pakistan · 暂无估算</title></path>
+        <path class="c" d="M685 206l7 1,1 -2,2 0,2 -2,1 0,0 4,2 1,3 -2,5 0,1 1,-9 2,-2 1,1 3,-2 4,-3 0,1 2,-3 2,1 2,-7 2,-2 2,0 2,-10 2,-5 -1,3 -3,-1 -2,-2 -1,-1 -4,1 -2,-1 0,2 -6,5 0,1 -1,3 -1,1 -3,3 -2,2 1z" data-name="Afghanistan"><title>Afghanistan · 暂无估算</title></path>
+        <path class="c" d="M688 207l2 -3,-1 -3,-2 -1,1 -1,2 0,3 -4,3 -1,0 2,1 1,-1 1,-3 -1,0 2,12 0,0 3,3 1,0 3,-5 0,-3 2,-2 -1,0 -4,-1 0,-2 2,-2 0,-1 2,-4 0z" data-name="Tajikistan"><title>Tajikistan · 暂无估算</title></path>
+        <path class="c" d="M697 190l1 -1,2 -1,4 1,1 -2,1 0,4 1,10 0,3 2,-6 4,-3 0,-1 2,-3 0,-5 2,0 1,-6 1,-6 -1,0 -2,6 0,4 -2,-7 -2,2 -3,-1 0z" data-name="Kyrgyzstan"><title>Kyrgyzstan · 暂无估算</title></path>
+        <path class="c" d="M646 192l4 -2,4 3,5 0,-1 -1,5 -3,4 1,1 4,4 0,1 3,5 4,7 3,0 2,-2 -1,-3 2,-1 3,-6 3,-3 -1,0 -3,-2 0,-3 -3,-6 -2,-5 0,-4 3,0 -6,-2 -1,0 -2,-2 0,1 -3,3 1,2 -1,-3 -4,-2 0,0 3,-1 -2z" data-name="Turkmenistan"><title>Turkmenistan · 暂无估算</title></path>
+        <path class="c" d="M635 229l-3 -3,1 -2,-2 -2,-3 -2,-2 -3,2 -4,0 -1,-2 -1,-3 -7,0 -5,1 0,2 2,2 1,5 -3,1 1,-1 2,3 1,1 2,8 3,5 -1,4 -3,5 0,6 2,3 3,2 0,-2 9,1 0,-1 2,1 4,2 1,1 2,-3 3,3 3,2 1,0 3,2 2,-4 1,-1 4,-12 -2,-1 -4,-1 0,-5 2,-3 -1,-6 -3,-4 -7,-3 -1,-1 1z" data-name="Iran"><title>Iran · 暂无估算</title></path>
+        <path class="c" d="M599 221l1 -4,2 -1,-2 -1,0 -3,2 -4,8 0,8 -1,-3 2,-1 6,-12 7,-3 -1z" data-name="Syria"><title>Syria · 暂无估算</title></path>
+        <path class="c" d="M629 202l-1 0,-1 -3,-6 -2,0 -3,4 0,2 1,-1 1,1 1,0 1,2 1,0 3z" data-name="Armenia"><title>Armenia · 暂无估算</title></path>
+        <path class="c b-m-1 b-pc-2 r-core" d="M531 129l3 -5,1 -5,-2 -2,0 -6,2 -4,3 0,1 -2,-1 -1,9 -15,2 0,1 -3,5 1,1 -3,1 0,8 5,1 9,-4 2,-3 3,0 3,-9 7,-2 6,4 5,-2 5,-3 1,-3 10,-3 0,-2 3,-3 0,-5 -14z" data-name="Sweden"><title>瑞典 · Sweden · 0.33 亿美元 · 人均 3.11 美元</title></path>
+        <path class="c" d="M578 140l4 2,4 0,-1 3,3 4,3 2,-4 1,1 4,-2 0,-1 2,-15 -2,-5 1,-1 -3,2 -1,-1 -4,6 -2,1 -2,2 -1,0 -2,4 -2z" data-name="Belarus"><title>Belarus · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-0 r-emerging" d="M588 156l6 -1,2 2,-1 2,2 0,1 2,4 1,2 0,2 2,5 1,-1 6,-2 0,-2 3,-9 2,0 2,-3 -1,-1 1,-5 -2,0 -1,-3 0,-3 5,-2 0,-2 -1,2 -3,3 0,-3 -6,-4 -1,-7 2,-5 -1,-1 1,-2 -2,2 -2,0 -2,3 -3,-1 -5,5 -1,15 2,1 -2,2 0z" data-name="Ukraine"><title>乌克兰 · Ukraine · 0.07 亿美元 · 人均 0.19 美元</title></path>
+        <path class="c b-m-1 b-pc-1 r-emerging" d="M565 149l1 4,-2 1,3 7,-4 4,0 2,-3 -2,-5 1,-6 -3,0 -1,-4 0,0 -1,-3 -2,-3 -7,0 -3,10 -4,3 2,11 0,2 2z" data-name="Poland"><title>波兰 · Poland · 0.53 亿美元 · 人均 1.41 美元</title></path>
+        <path class="c b-m-0 b-pc-2 r-core" d="M547 170l0 1,-2 0,-1 4,-3 1,-7 -1,0 -1,-3 1,-5 -1,1 -2,2 1,0 -1,5 -1,2 1,0 -3,2 -2,2 1,2 -1,4 1,1 0,0 2z" data-name="Austria"><title>奥地利 · Austria · 0.24 亿美元 · 人均 2.61 美元</title></path>
+        <path class="c b-m-0 b-pc-1 r-emerging" d="M561 169l2 2,-2 1,-3 4,-7 2,-6 -4,0 -3,2 0,0 -1,3 1,8 -3,3 1z" data-name="Hungary"><title>匈牙利 · Hungary · 0.11 亿美元 · 人均 1.15 美元</title></path>
+        <path class="c" d="M574 170l2 -1,4 1,3 6,-3 0,-2 3,0 -4,-4 -5z" data-name="Moldova"><title>Moldova · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-0 r-emerging" d="M578 179l4 1,0 1,-2 0,-1 4,-3 -1,-5 1,-7 0,-2 -2,1 -1,-3 0,-4 -5,2 -1,3 -4,3 -2,5 1,5 -1,4 5,0 4z" data-name="Romania"><title>罗马尼亚 · Romania · 0.14 亿美元 · 人均 0.74 美元</title></path>
+        <path class="c" d="M574 142l0 2,-2 1,-1 2,-6 2,-2 -2,0 -2,-4 -1,-1 -3,4 -2,7 0,5 3z" data-name="Lithuania"><title>Lithuania · 暂无估算</title></path>
+        <path class="c" d="M576 135l1 1,1 4,-4 2,-5 -3,-7 0,-4 2,2 -6,3 -1,2 3,2 0,1 -3,2 -1,6 2z" data-name="Latvia"><title>Latvia · 暂无估算</title></path>
+        <path class="c" d="M578 127l-2 3,1 4,-1 1,-6 -2,-2 1,0 -3,-1 1,-2 -2,0 -2,3 -1,10 0z" data-name="Estonia"><title>Estonia · 暂无估算</title></path>
+        <path class="c b-m-2 b-pc-2 r-core" d="M539 149l0 3,3 7,-2 0,-6 3,1 3,3 2,-2 2,0 3,-2 -1,-5 1,0 1,-5 -2,-3 1,1 -5,-5 -2,0 -9,1 0,1 -1,1 -5,3 0,1 -2,0 -3,4 0,0 1,2 1,0 1,5 -1,4 2z" data-name="Germany"><title>德国 · Germany · 2.36 亿美元 · 人均 2.79 美元</title></path>
+        <path class="c" d="M563 183l1 2,7 0,5 -1,3 1,-2 4,1 2,-5 1,0 1,-3 1,-2 -2,-4 1,0 -2,-2 -1,2 -3,-2 -2,1 -2z" data-name="Bulgaria"><title>Bulgaria · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-1 r-emerging" d="M573 213l0 1,-4 0,-4 -1,1 -2,1 2,6 0zM564 193l4 -1,2 2,3 -1,0 -1,1 0,-2 3,-6 0,2 2,-3 1,-2 -2,0 1,2 3,-1 1,3 2,0 2,-3 -1,1 2,-2 0,1 3,-2 0,-2 -1,-4 -9,2 -4,6 -2z" data-name="Greece"><title>希腊 · Greece · 0.12 亿美元 · 人均 1.15 美元</title></path>
+        <path class="c b-m-1 b-pc-0 r-emerging" d="M624 207l-5 -1,-9 2,-8 0,-2 3,-1 -1,1 -2,-4 0,-1 2,-5 0,-2 -2,-3 0,-3 2,-2 -2,-3 0,-4 -5,1 -2,-1 -2,3 -3,4 0,1 -2,6 0,6 -3,5 0,9 4,5 -1,6 -2,3 2,0 3,3 2,-1 0,0 5,1 3zM573 192l5 -1,0 1,3 1,-4 1,-4 3,-1 -2,2 -3,-1 0z" data-name="Turkey"><title>土耳其 · Turkey · 0.50 亿美元 · 人均 0.58 美元</title></path>
+        <path class="c" d="M558 195l-2 4,-2 -2,0 -7,1 -1,2 1,0 4,1 1z" data-name="Albania"><title>Albania · 暂无估算</title></path>
+        <path class="c" d="M546 176l3 2,3 0,2 2,-1 1,-9 -1,0 1,7 8,-7 -3,-2 -3,-1 -2,-1 -1,-1 2,-1 -2,0 -1,5 0,1 -2,2 -1z" data-name="Croatia"><title>Croatia · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-2 r-core" d="M527 172l-1 2,3 0,-1 2,-2 0,-1 1,-2 0,-3 1,-2 -2,-1 0,2 -4,5 -1,3 1z" data-name="Switzerland"><title>瑞士 · Switzerland · 0.28 亿美元 · 人均 3.15 美元</title></path>
+        <path class="c b-m-1 b-pc-2 r-core" d="M517 160l-1 5,-4 -1,-5 -5,7 -1,3 2z" data-name="Belgium"><title>比利时 · Belgium · 0.33 亿美元 · 人均 2.80 美元</title></path>
+        <path class="c b-m-1 b-pc-2 r-core" d="M519 150l0 5,-1 1,-1 0,0 4,-3 -2,-5 0,4 -6,6 -2z" data-name="Netherlands"><title>荷兰 · Netherlands · 0.71 亿美元 · 人均 3.92 美元</title></path>
+        <path class="c b-m-0 b-pc-1 r-emerging" d="M475 191l2 -1,1 2,3 -1,1 2,-1 1,-1 5,-1 0,1 5,-2 4,-3 0,0 -5,-1 -1,2 -7,-1 -4z" data-name="Portugal"><title>葡萄牙 · Portugal · 0.17 亿美元 · 人均 1.60 美元</title></path>
+        <path class="c b-m-2 b-pc-1 r-core" d="M479 207l1 -3,-1 -5,1 0,1 -5,1 -1,-1 -2,-3 1,-1 -2,-2 1,-1 -3,4 -3,17 1,6 3,1 -1,3 2,3 -1,0 2,-2 3,-4 0,-3 6,1 2,-2 3,-2 1,-2 2,-6 0,-3 3,-1 -1,-2 -2,-3 -1z" data-name="Spain"><title>西班牙 · Spain · 1.18 亿美元 · 人均 2.44 美元</title></path>
+        <path class="c b-m-0 b-pc-2 r-core" d="M483 149l0 3,-2 3,-5 2,-4 0,3 -4,-2 -4,6 -5,0 4,4 1z" data-name="Ireland"><title>爱尔兰 · Ireland · 0.14 亿美元 · 人均 2.64 美元</title></path>
+        <path class="c" d="M960 374l4 4,-2 -1,-6 -5,4 2z" data-name="New Caledonia"><title>New Caledonia · 暂无估算</title></path>
+        <path class="c" d="M949 342l-3 -4,3 4zM947 343l-3 -1,0 -1,3 2zM943 337l1 2,-5 -3,4 1zM936 335l-1 -2,1 2z" data-name="Solomon Is."><title>Solomon Is. · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-2 r-core" d="M991 433l-2 4,-2 1,-2 -1,2 -3,-1 -2,-3 -1,2 -3,0 -4,-5 -9,4 2,3 6,0 -2,1 1,1 2,4 2,3 -1,-2 5,-2 0,-1 3zM971 444l4 -3,5 -7,1 3,2 -2,1 3,-4 6,1 1,-5 2,-2 5,-4 3,-7 -2,0 -1,5 -6,3 -2z" data-name="New Zealand"><title>新西兰 · New Zealand · 0.21 亿美元 · 人均 4.04 美元</title></path>
+        <path class="c b-m-2 b-pc-2 r-core" d="M910 435l2 0,-1 8,-1 -1,-2 3,-2 -1,-4 -9,5 1,3 -1zM850 408l-5 2,-2 3,-10 0,-5 4,-4 -1,-4 -2,0 -2,1 -1,0 -5,-6 -17,1 2,-1 -3,2 2,-2 -6,2 -8,0 3,1 -2,6 -4,12 -3,4 -4,0 -3,2 -2,1 2,1 0,-1 -1,1 -2,1 1,0 -2,4 -4,4 -1,4 3,3 0,-1 -2,4 -5,5 -1,0 -2,-2 -1,2 0,8 3,3 -1,1 1,-2 3,-2 5,13 8,2 -1,1 -3,2 -4,0 -7,2 -5,4 11,2 -1,2 2,3 11,6 4,3 6,3 0,0 3,6 6,0 2,0 4,2 2,-2 9,-7 14,-1 6,-5 1,-6 4,-4 -2,1 -1,-4 3,-8 -3,-3 -6,-4 -2,1 -1,-1 -3,-1 3,-3 0,3 -5,0 -2,-4 4,-1 2,-2 -1,0 -2,-4 -3,1 -1,-8 -4,-15 3z" data-name="Australia"><title>澳大利亚 · Australia · 1.18 亿美元 · 人均 4.37 美元</title></path>
+        <path class="c" d="M727 294l0 3,-4 1,-2 -6,2 -4,4 6z" data-name="Sri Lanka"><title>Sri Lanka · 暂无估算</title></path>
+        <path class="c b-m-4 b-pc-1 r-mfg" d="M804 264l-2 -1,0 -2,1 -2,5 -1,0 2,-2 3,-2 1zM723 190l0 -2,2 -1,-3 -6,7 -2,2 -6,6 1,1 -2,0 -3,3 -1,3 -2,0 2,7 3,2 3,-1 4,1 2,7 1,5 2,3 6,12 0,12 3,7 -3,4 0,8 -4,-2 -2,2 -2,4 1,7 -4,4 -3,6 0,1 -1,-5 -4,-2 1,-4 0,-1 -1,3 -6,3 1,4 -2,0 -2,4 -5,0 -2,-1 -1,2 -2,4 0,3 -1,7 3,5 11,4 1,4 3,1 3,4 0,7 -2,-5 11,-4 0,-2 1,0 7,-1 0,0 2,-2 -2,-1 2,-4 1,0 2,-4 -1,-7 6,-9 3,3 -5,-1 -1,-7 5,-3 0,-2 2,7 5,3 -2,4 1,0 2,-4 0,-5 6,3 2,5 8,0 2,-2 1,2 3,-1 4,-2 1,-6 10,-8 6,-5 1,-1 -1,-1 2,-7 2,-1 3,-2 0,0 -3,-8 -2,-1 -1,0 -1,-3 -2,-3 2,-8 1,1 3,-2 0,0 -2,-2 1,-3 -1,0 -3,-1 0,-1 -3,-3 0,0 -3,3 -3,0 -4,-2 -3,-5 0,1 -1,-1 -2,-2 1,-2 -1,-6 4,-2 1,-5 -2,-3 3,-1 -2,-8 0,-19 -11,-1 -3,2 1,0 -2,-1 -2,0 -2,-3 -4,-4 -1,-4 -5,0 -3,-3 -1,0 -3,0 -1,3 -2,5 0,1 -2,3 0,6 -4z" data-name="China"><title>中国大陆 · China · 30.74 亿美元 · 人均 2.18 美元</title></path>
+        <path class="c b-m-2 b-pc-3 r-core" d="M838 246l-3 7,-1 -5,3 -5,2 1,-1 2z" data-name="Taiwan"><title>中国台湾 · Taiwan · 2.36 亿美元 · 人均 10.09 美元</title></path>
+        <path class="c b-m-2 b-pc-1 r-core" d="M529 174l2 1,3 -1,0 1,4 1,1 3,-2 -1,-3 2,1 4,7 7,2 0,0 2,7 3,0 2,-4 -2,-1 2,2 2,-1 1,-2 3,-1 0,1 -3,-2 -4,-12 -7,-2 -2,-1 -3,-3 -2,-4 2,0 -1,-2 -1,0 -6,1 1,3 -1,2 0,1 -1,3 0,0 -2zM541 204l2 -1,-1 6,-7 -4,0 -1,6 0zM524 195l2 -1,1 2,0 4,-3 1,-1 -1,0 -5,1 0z" data-name="Italy"><title>意大利 · Italy · 1.42 亿美元 · 人均 2.41 美元</title></path>
+        <path class="c b-m-0 b-pc-2 r-core" d="M528 145l-4 0,-2 -6,2 -3,2 0,3 -2,-1 3,2 2,-3 4,1 2zM534 140l1 2,-1 3,-3 -2,-1 -1,4 -2z" data-name="Denmark"><title>丹麦 · Denmark · 0.19 亿美元 · 人均 3.17 美元</title></path>
+        <path class="c b-m-2 b-pc-2 r-core" d="M483 149l-4 -1,0 -4,2 0,3 2,-1 3zM491 151l1 -3,-2 -2,-4 -2,1 -1,-1 -2,-2 2,0 -3,-1 -2,3 -8,6 0,-3 5,6 -1,-4 7,3 0,3 5,2 1,2 5,4 1,-1 3,-1 1,1 2,-2 1,-9 1,-1 0,-2 1,-3 0,-2 1,-1 0,4 -4,3 -1,-5 -1,-1 -1,3 -1,-1 -2,0 -3,4 1z" data-name="United Kingdom"><title>英国 · United Kingdom · 2.13 亿美元 · 人均 3.09 美元</title></path>
+        <path class="c" d="M460 96l-1 3,3 3,-3 4,-11 4,-11 -2,3 -2,-7 -3,5 0,0 -2,-6 -1,2 -3,5 -1,4 4,4 -3,4 1,4 -2,5 0z" data-name="Iceland"><title>Iceland · 暂无估算</title></path>
+        <path class="c" d="M629 191l4 3,2 -2,3 4,2 1,-2 0,-2 6,-3 -1,1 -2,-1 -1,-4 3,0 -3,-2 -1,0 -1,-2 -3,4 0,-1 -2,1 -1zM628 202l-2 -1,-2 -2,3 0,1 3z" data-name="Azerbaijan"><title>Azerbaijan · 暂无估算</title></path>
+        <path class="c" d="M611 186l15 3,3 2,-1 1,2 2,-4 -1,-5 1,-3 -2,-3 1,0 -4,-4 -3z" data-name="Georgia"><title>Georgia · 暂无估算</title></path>
+        <path class="c b-m-2 b-pc-1 r-emerging" d="M836 280l-2 -3,4 2,-1 2,-1 -1zM841 287l1 -2,1 0,0 1,2 -2,-1 2,-2 4,-2 -2,1 -1zM851 292l0 3,0 3,-1 -3,-2 1,1 2,-1 1,-3 -1,-1 -2,1 -1,-2 -2,-4 3,0 -1,1 -2,3 -2,1 1,3 -2,2 0,-1 -2,3 1,0 3zM829 289l-4 3,7 -9,0 3,-3 3zM840 264l0 3,0 2,-2 1,0 5,6 1,1 4,-4 -3,0 1,-2 -2,-4 0,1 -2,-1 0,0 1,-2 -3,0 -3,1 1,1 -7,5 1zM839 283l0 -1,3 1,0 1,-3 2,0 -3zM849 281l0 3,-2 -1,1 3,-1 1,-2 -4,2 0,0 -1,-2 -2,3 0,1 1z" data-name="Philippines"><title>菲律宾 · Philippines · 1.18 亿美元 · 人均 1.03 美元</title></path>
+        <path class="c b-m-2 b-pc-2 r-emerging" d="M778 297l3 1,0 1,3 -1,2 2,4 11,-2 1,-6 -5,-4 -7,0 -3zM827 304l-5 -1,-4 8,-5 0,-6 2,-2 -2,0 -2,4 1,0 -2,5 -2,3 -4,1 2,2 -1,1 -3,3 -4,1 0,2 2,4 2,0 1,-2 0,0 2,-2 1z" data-name="Malaysia"><title>马来西亚 · Malaysia · 1.18 亿美元 · 人均 3.42 美元</title></path>
+        <path class="c" d="M821 300l-1 3,-2 1,-1 -2,4 -2z" data-name="Brunei"><title>Brunei · 暂无估算</title></path>
+        <path class="c" d="M538 176l7 -2,1 2,-2 1,-1 2,-5 0,0 -3z" data-name="Slovenia"><title>Slovenia · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-2 r-core" d="M579 84l0 3,4 3,-2 4,3 5,-2 4,3 3,-2 3,5 3,-2 3,-8 7,-14 3,-5 -3,1 -5,-2 -4,4 -5,9 -6,-1 -2,-4 -2,-1 -1,0 -8,-8 -5,2 -2,3 3,7 1,2 -2,2 -4,4 -2,4 2,-2 4z" data-name="Finland"><title>芬兰 · Finland · 0.14 亿美元 · 人均 2.50 美元</title></path>
+        <path class="c" d="M563 167l-2 2,-3 -1,-8 3,-3 -2,5 -4,2 0,1 1,5 -1,3 2z" data-name="Slovakia"><title>Slovakia · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-1 r-emerging" d="M542 159l4 3,1 0,2 0,3 3,-5 3,-5 -1,-2 1,-5 -3,-1 -3,6 -3,2 0z" data-name="Czechia"><title>捷克 · Czechia · 0.17 亿美元 · 人均 1.56 美元</title></path>
+        <path class="c" d="M601 275l1 -8,5 -3,2 6,11 10,-2 0,-7 -6,-4 0,-2 -1,-1 2,-3 0z" data-name="Eritrea"><title>Eritrea · 暂无估算</title></path>
+        <path class="c b-m-4 b-pc-4 r-ip" d="M894 200l-2 4,-1 7,-1 2,-4 2,-5 0,-4 3,-2 -1,0 -2,-11 2,3 2,-2 6,-2 1,-1 -1,0 -3,-3 -3,3 -1,6 -6,6 -1,3 1,3 -6,2 2,5 -5,3 -9,3 -1,1 7zM902 184l2 -1,0 4,-4 1,-2 3,-5 -2,-1 3,-3 0,-1 -3,2 -2,3 -1,1 -7,4 4,4 1zM868 218l4 -2,2 1,-1 2,-1 -1,-2 1,-1 2,-1 -1,0 -2z" data-name="Japan"><title>日本 · Japan · 33.10 亿美元 · 人均 26.91 美元</title></path>
+        <path class="c" d="M338 372l1 5,6 1,1 5,3 0,-1 8,-3 2,-8 -1,3 -4,0 -2,-9 -3,-5 -5,2 -8,8 -1,2 3z" data-name="Paraguay"><title>Paraguay · 暂无估算</title></path>
+        <path class="c" d="M644 262l4 6,-2 1,-1 2,-7 3,-3 2,-8 2,-2 2,-4 0,-3 -8,3 -6,9 1,1 0,5 -4,8 -1z" data-name="Yemen"><title>Yemen · 暂无估算</title></path>
+        <path class="c b-m-1 b-pc-1 r-emerging" d="M597 231l3 1,2 -2,2 -1,2 -1,-3 -3,6 -2,7 2,8 7,8 0,1 2,1 0,2 2,3 3,1 3,1 3,2 0,1 5,9 1,2 2,-2 6,-9 3,-8 1,-5 4,-1 0,-9 -1,-2 3,-5 -9,-5 -5,-2 -7,-3 -2,-6 -11,-2 0,1 -4z" data-name="Saudi Arabia"><title>沙特阿拉伯 · Saudi Arabia · 0.65 亿美元 · 人均 1.97 美元</title></path>
+        <path class="c" d="M591 213l5 -1,-2 1,-3 0z" data-name="N. Cyprus"><title>N. Cyprus · 暂无估算</title></path>
+        <path class="c" d="M591 213l3 1,-2 1,-2 -2,1 0z" data-name="Cyprus"><title>Cyprus · 暂无估算</title></path>
+        <path class="c b-m-0 b-pc-0 r-emerging" d="M494 213l3 8,-1 1,-6 2,0 2,-5 3,-9 4,0 5,-8 1,-3 6,-4 3,-2 6,-6 1,7 -15,5 -5,3 0,5 -6,0 -3,1 -5,7 -5,3 -5,10 2z" data-name="Morocco"><title>摩洛哥 · Morocco · 0.06 亿美元 · 人均 0.16 美元</title></path>
+        <path class="c b-m-0 b-pc-0 r-emerging" d="M602 253l-33 0,0 -24,1 -5,4 0,6 2,6 -2,2 1,1 1,0 -1,5 1,1 -1,2 6,-2 5,-1 0,-2 -2,-2 -4,5 11,4 6,0 3,3 3z" data-name="Egypt"><title>埃及 · Egypt · 0.17 亿美元 · 人均 0.15 美元</title></path>
+        <path class="c" d="M569 253l0 6,-3 0,0 1,-22 -11,-5 2,-1 -1,-5 -1,-3 -4,-1 1,-3 -5,1 -1,0 -8,-1 -4,2 -1,0 -2,4 -3,0 -3,10 3,2 3,9 3,3 -2,-1 -2,3 -3,6 0,1 1,4 1,0 30z" data-name="Libya"><title>Libya · 暂无估算</title></path>
+        <path class="c" d="M633 293l-8 8,-4 0,-5 3,-3 -1,-3 3,-10 -3,-4 -6,-3 -3,-1 -1,0 -1,2 0,1 -7,5 -5,1 -5,3 0,1 -2,2 1,4 0,5 3,2 3,-2 3,0 1,3 1,-1 1,3 3,12 4z" data-name="Ethiopia"><title>Ethiopia · 暂无估算</title></path>
+        <path class="c" d="M618 280l2 0,-1 2,1 1,-1 2,-3 -1,0 -1,2 -3z" data-name="Djibouti"><title>Djibouti · 暂无估算</title></path>
+        <path class="c" d="M636 283l0 6,-3 4,-12 -4,-3 -3,2 -3,3 3,13 -3z" data-name="Somaliland"><title>Somaliland · 暂无估算</title></path>
+        <path class="c" d="M594 318l-12 1,1 -6,4 -4,-2 0,1 -4,1 0,6 -1,1 -1,2 2,1 5,-3 5,0 3z" data-name="Uganda"><title>Uganda · 暂无估算</title></path>
+        <path class="c" d="M584 318l1 3,-4 2,0 -3,3 -2z" data-name="Rwanda"><title>Rwanda · 暂无估算</title></path>
+        <path class="c" d="M552 189l-6 -5,-2 -3,0 -1,10 1,-1 2,1 1,0 2,-2 1,0 2z" data-name="Bosnia and Herz."><title>Bosnia and Herz. · 暂无估算</title></path>
+        <path class="c" d="M562 190l2 1,0 2,-6 2,-1 -1,1 -3,4 -1z" data-name="Macedonia"><title>Macedonia · 暂无估算</title></path>
+        <path class="c" d="M552 178l4 -1,4 5,3 0,-1 2,2 3,-2 3,-2 0,0 -1,-2 -2,-2 1,-3 -2,1 -2,-1 -1,1 -3,-2 -2z" data-name="Serbia"><title>Serbia · 暂无估算</title></path>
+        <path class="c" d="M556 189l-1 0,-1 2,-3 -2,2 -3,3 2,0 1z" data-name="Montenegro"><title>Montenegro · 暂无估算</title></path>
+        <path class="c" d="M557 192l-1 -3,2 -2,2 2,0 1,-3 2z" data-name="Kosovo"><title>Kosovo · 暂无估算</title></path>
+        <path class="c" d="M329 285l2 0,0 2,-3 0,1 -2z" data-name="Trinidad and Tobago"><title>Trinidad and Tobago · 暂无估算</title></path>
+        <path class="c" d="M586 305l-3 -3,-5 1,-8 -10,-4 -2,2 -1,2 -4,2 0,2 3,6 0,3 -3,3 2,1 0,3 -4,-1 -2,3 -1,0 4,2 1,0 5,-2 2,3 2,3 5,-5 4,-7 1z" data-name="S. Sudan"><title>S. Sudan · 暂无估算</title></path>
+        <rect class="c b-m-2 b-pc-4 r-core" x="814.74" y="249.58" width="4.8" height="4.8" data-name="Hong Kong"><title>中国香港 · Hong Kong · 1.42 亿美元 · 人均 18.93 美元</title></rect>
+        <rect class="c b-m-2 b-pc-4 r-core" x="785.99" y="308.86" width="4.8" height="4.8" data-name="Singapore"><title>新加坡 · Singapore · 1.06 亿美元 · 人均 17.67 美元</title></rect>
+      </g>
+      <g id="nodes">
+        <g class="node"><line x1="884.52" y1="211.62" x2="892.92" y2="211.62"/><line x1="888.72" y1="207.42" x2="888.72" y2="215.82"/><circle cx="888.72" cy="211.62" r="2.3"/></g>
+        <circle class="nodehit" cx="888.72" cy="211.62" r="9" data-node="0"><title>千叶·幕张 · 展会</title></circle>
+        <g class="node"><polygon points="884.39,211.04 886.99,215.84 881.79,215.84"/></g>
+        <circle class="nodehit" cx="884.39" cy="213.74" r="9" data-node="1"><title>静冈 · 总部</title></circle>
+        <g class="node"><polygon points="876.39,211.95 878.99,216.75 873.79,216.75"/></g>
+        <circle class="nodehit" cx="876.39" cy="214.65" r="9" data-node="2"><title>大阪 · 总部</title></circle>
+        <g class="node"><circle cx="888.25" cy="211.46" r="2.4"/></g>
+        <circle class="nodehit" cx="888.25" cy="211.46" r="9" data-node="3"><title>东京·秋叶原 · 零售集散</title></circle>
+        <g class="node"><rect x="813.87" y="247.84" width="4.2" height="4.2"/></g>
+        <circle class="nodehit" cx="815.97" cy="249.94" r="9" data-node="4"><title>东莞 · 制造</title></circle>
+        <g class="node"><rect x="814.73" y="249.21" width="4.2" height="4.2"/></g>
+        <circle class="nodehit" cx="816.83" cy="251.31" r="9" data-node="5"><title>深圳 · 制造</title></circle>
+        <g class="node"><line x1="833.22" y1="225.38" x2="841.62" y2="225.38"/><line x1="837.42" y1="221.18" x2="837.42" y2="229.58"/><circle cx="837.42" cy="225.38" r="2.3"/></g>
+        <circle class="nodehit" cx="837.42" cy="225.38" r="9" data-node="6"><title>上海 · 展会</title></circle>
+        <g class="node"><polygon points="823.33,195.26 825.93,200.06 820.73,200.06"/></g>
+        <circle class="nodehit" cx="823.33" cy="197.96" r="9" data-node="7"><title>北京 · 总部</title></circle>
+        <g class="node"><polygon points="817.14,249.28 819.74,254.08 814.54,254.08"/></g>
+        <circle class="nodehit" cx="817.14" cy="251.98" r="9" data-node="8"><title>中国香港 · 总部</title></circle>
+        <g class="node"><circle cx="837.67" cy="244.02" r="2.4"/></g>
+        <circle class="nodehit" cx="837.67" cy="244.02" r="9" data-node="9"><title>中国台北 · 零售集散</title></circle>
+        <g class="node"><circle cx="852.72" cy="205.51" r="2.4"/></g>
+        <circle class="nodehit" cx="852.72" cy="205.51" r="9" data-node="10"><title>首尔 · 零售集散</title></circle>
+        <g class="node"><circle cx="779.17" cy="276.58" r="2.4"/></g>
+        <circle class="nodehit" cx="779.17" cy="276.58" r="9" data-node="11"><title>曼谷 · 零售集散</title></circle>
+        <g class="node"><circle cx="788.39" cy="311.26" r="2.4"/></g>
+        <circle class="nodehit" cx="788.39" cy="311.26" r="9" data-node="12"><title>新加坡 · 零售集散</title></circle>
+        <g class="node"><rect x="791.93" y="253.64" width="4.2" height="4.2"/></g>
+        <circle class="nodehit" cx="794.03" cy="255.74" r="9" data-node="13"><title>河内 · 制造</title></circle>
+        <g class="node"><line x1="167.36" y1="216.65" x2="175.76" y2="216.65"/><line x1="171.56" y1="212.45" x2="171.56" y2="220.85"/><circle cx="171.56" cy="216.65" r="2.3"/></g>
+        <circle class="nodehit" cx="171.56" cy="216.65" r="9" data-node="14"><title>洛杉矶 · 展会</title></circle>
+        <g class="node"><line x1="170.36" y1="220.79" x2="178.76" y2="220.79"/><line x1="174.56" y1="216.59" x2="174.56" y2="224.99"/><circle cx="174.56" cy="220.79" r="2.3"/></g>
+        <circle class="nodehit" cx="174.56" cy="220.79" r="9" data-node="15"><title>圣地亚哥 · 展会</title></circle>
+        <g class="node"><circle cx="294.44" cy="195.30" r="2.4"/></g>
+        <circle class="nodehit" cx="294.44" cy="195.30" r="9" data-node="16"><title>纽约 · 零售集散</title></circle>
+        <g class="node"><polygon points="160.56,167.78 163.16,172.58 157.96,172.58"/></g>
+        <circle class="nodehit" cx="160.56" cy="170.48" r="9" data-node="17"><title>埃弗里特 · 总部</title></circle>
+        <g class="node"><polygon points="301.72,188.72 304.32,193.52 299.12,193.52"/></g>
+        <circle class="nodehit" cx="301.72" cy="191.42" r="9" data-node="18"><title>波塔基特 · 总部</title></circle>
+        <g class="node"><circle cx="224.64" cy="260.37" r="2.4"/></g>
+        <circle class="nodehit" cx="224.64" cy="260.37" r="9" data-node="19"><title>墨西哥城 · 零售集散</title></circle>
+        <g class="node"><line x1="366.27" y1="381.64" x2="374.67" y2="381.64"/><line x1="370.47" y1="377.44" x2="370.47" y2="385.84"/><circle cx="370.47" cy="381.64" r="2.3"/></g>
+        <circle class="nodehit" cx="370.47" cy="381.64" r="9" data-node="20"><title>圣保罗 · 展会</title></circle>
+        <g class="node"><circle cx="499.64" cy="157.71" r="2.4"/></g>
+        <circle class="nodehit" cx="499.64" cy="157.71" r="9" data-node="21"><title>伦敦 · 零售集散</title></circle>
+        <g class="node"><line x1="502.33" y1="167.34" x2="510.73" y2="167.34"/><line x1="506.53" y1="163.14" x2="506.53" y2="171.54"/><circle cx="506.53" cy="167.34" r="2.3"/></g>
+        <circle class="nodehit" cx="506.53" cy="167.34" r="9" data-node="22"><title>巴黎 · 展会</title></circle>
+        <g class="node"><line x1="514.61" y1="158.74" x2="523.01" y2="158.74"/><line x1="518.81" y1="154.54" x2="518.81" y2="162.94"/><circle cx="518.81" cy="158.74" r="2.3"/></g>
+        <circle class="nodehit" cx="518.81" cy="158.74" r="9" data-node="23"><title>杜塞尔多夫 · 展会</title></circle>
+        <g class="node"><line x1="524.97" y1="184.83" x2="533.37" y2="184.83"/><line x1="529.17" y1="180.63" x2="529.17" y2="189.03"/><circle cx="529.17" cy="184.83" r="2.3"/></g>
+        <circle class="nodehit" cx="529.17" cy="184.83" r="9" data-node="24"><title>卢卡 · 展会</title></circle>
+        <g class="node"><circle cx="920.03" cy="412.81" r="2.4"/></g>
+        <circle class="nodehit" cx="920.03" cy="412.81" r="9" data-node="25"><title>悉尼 · 零售集散</title></circle>
+        <g class="node"><circle cx="653.53" cy="243.52" r="2.4"/></g>
+        <circle class="nodehit" cx="653.53" cy="243.52" r="9" data-node="26"><title>迪拜 · 零售集散</title></circle>
+      </g>
+    </svg>
+    </div>
+    <div class="legend">
+      <div class="leg leg-m">
+        <div class="legtitle">市场规模 · 亿美元</div>
+        <div class="chips"><div class="chip"><div class="sw" style="background:#3A424C"></div><div class="lb">&lt;0.3</div></div><div class="chip"><div class="sw" style="background:#255A72"></div><div class="lb">0.3–1</div></div><div class="chip"><div class="sw" style="background:#1E7C99"></div><div class="lb">1–3</div></div><div class="chip"><div class="sw" style="background:#2FA6BC"></div><div class="lb">3–12</div></div><div class="chip"><div class="sw" style="background:#6FD8CF"></div><div class="lb">12+</div></div></div>
+      </div>
+      <div class="leg leg-pc">
+        <div class="legtitle">人均年消费 · 美元 / 人</div>
+        <div class="chips"><div class="chip"><div class="sw" style="background:#413F3A"></div><div class="lb">&lt;1</div></div><div class="chip"><div class="sw" style="background:#6E5330"></div><div class="lb">1–2.5</div></div><div class="chip"><div class="sw" style="background:#A6762C"></div><div class="lb">2.5–5</div></div><div class="chip"><div class="sw" style="background:#D9A230"></div><div class="lb">5–12</div></div><div class="chip"><div class="sw" style="background:#F3D45F"></div><div class="lb">12+</div></div></div>
+      </div>
+      <div class="leg leg-role">
+        <div class="legtitle">产业角色 / Role</div>
+        <div class="cats">
+          <label class="cat" for="rf-all"><i style="background:transparent;border-color:var(--muted)"></i>全部</label>
+          <label class="cat" for="rf-ip"><i style="background:#E2445C"></i>IP・原型策源</label>
+          <label class="cat" for="rf-mfg"><i style="background:#E8A33D"></i>制造中枢</label>
+          <label class="cat" for="rf-core"><i style="background:#3FA9C9"></i>成熟消费市场</label>
+          <label class="cat" for="rf-emerging"><i style="background:#7BC043"></i>高增长新兴</label>
+        </div>
+      </div>
+      <div class="legright">
+        <div class="legtitle">城市节点</div>
+        <div class="marks">
+          <span><svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true"><g stroke="#EDE9E0" stroke-width="1" fill="none"><line x1="-4.2" y1="0" x2="4.2" y2="0"/><line x1="0" y1="-4.2" x2="0" y2="4.2"/><circle r="2.3"/></g></svg>展会</span>
+          <span><svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true"><rect x="-2.1" y="-2.1" width="4.2" height="4.2" fill="#EDE9E0"/></svg>制造</span>
+          <span><svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true"><polygon points="0,-2.7 2.6,2.1 -2.6,2.1" fill="#EDE9E0"/></svg>总部</span>
+          <span><svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true"><circle r="2.4" fill="none" stroke="#EDE9E0" stroke-width="1"/></svg>集散</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rail">
+    <div class="card">
+      <h2>读数 / Readout</h2>
+      <div id="readout" class="hint">把光标移到地图上的国家或城市标记（手机上点一下）就会显示它的规格；完整数值见页面下方的数据表。</div>
+    </div>
+    <div class="card">
+      <h2 class="btitle btitle-m">规模排名 / Top 10 by volume</h2>
+      <h2 class="btitle btitle-pc">人均排名 / Top 10 by density</h2>
+      <div class="bars">
+      <div class="barset barset-m" aria-label="按规模排名前十">
+        <div class="bar" data-n="Japan">
+          <div class="t"><span>日本</span><b>33.1</b></div>
+          <div class="tr"><div class="fl b-m-4 b-pc-4 r-ip" style="width:100.0%"></div></div>
+        </div>
+        <div class="bar" data-n="United States of America">
+          <div class="t"><span>美国</span><b>31.9</b></div>
+          <div class="tr"><div class="fl b-m-4 b-pc-3 r-core" style="width:96.4%"></div></div>
+        </div>
+        <div class="bar" data-n="China">
+          <div class="t"><span>中国大陆</span><b>30.7</b></div>
+          <div class="tr"><div class="fl b-m-4 b-pc-1 r-mfg" style="width:92.9%"></div></div>
+        </div>
+        <div class="bar" data-n="South Korea">
+          <div class="t"><span>韩国</span><b>5.3</b></div>
+          <div class="tr"><div class="fl b-m-3 b-pc-3 r-core" style="width:16.1%"></div></div>
+        </div>
+        <div class="bar" data-n="Thailand">
+          <div class="t"><span>泰国</span><b>3.0</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-2 r-emerging" style="width:8.9%"></div></div>
+        </div>
+        <div class="bar" data-n="France">
+          <div class="t"><span>法国</span><b>2.6</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-2 r-core" style="width:7.9%"></div></div>
+        </div>
+        <div class="bar" data-n="Taiwan">
+          <div class="t"><span>中国台湾</span><b>2.4</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-3 r-core" style="width:7.1%"></div></div>
+        </div>
+        <div class="bar" data-n="Germany">
+          <div class="t"><span>德国</span><b>2.4</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-2 r-core" style="width:7.1%"></div></div>
+        </div>
+        <div class="bar" data-n="United Kingdom">
+          <div class="t"><span>英国</span><b>2.1</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-2 r-core" style="width:6.4%"></div></div>
+        </div>
+        <div class="bar" data-n="Indonesia">
+          <div class="t"><span>印度尼西亚</span><b>1.8</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-0 r-emerging" style="width:5.3%"></div></div>
+        </div>
+      </div>
+      <div class="barset barset-pc" aria-label="按人均排名前十">
+        <div class="bar" data-n="Japan">
+          <div class="t"><span>日本</span><b>26.9</b></div>
+          <div class="tr"><div class="fl b-m-4 b-pc-4 r-ip" style="width:100.0%"></div></div>
+        </div>
+        <div class="bar" data-n="Hong Kong">
+          <div class="t"><span>中国香港</span><b>18.9</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-4 r-core" style="width:70.3%"></div></div>
+        </div>
+        <div class="bar" data-n="Singapore">
+          <div class="t"><span>新加坡</span><b>17.7</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-4 r-core" style="width:65.7%"></div></div>
+        </div>
+        <div class="bar" data-n="South Korea">
+          <div class="t"><span>韩国</span><b>10.3</b></div>
+          <div class="tr"><div class="fl b-m-3 b-pc-3 r-core" style="width:38.2%"></div></div>
+        </div>
+        <div class="bar" data-n="Taiwan">
+          <div class="t"><span>中国台湾</span><b>10.1</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-3 r-core" style="width:37.5%"></div></div>
+        </div>
+        <div class="bar" data-n="United States of America">
+          <div class="t"><span>美国</span><b>9.4</b></div>
+          <div class="tr"><div class="fl b-m-4 b-pc-3 r-core" style="width:34.9%"></div></div>
+        </div>
+        <div class="bar" data-n="United Arab Emirates">
+          <div class="t"><span>阿联酋</span><b>5.6</b></div>
+          <div class="tr"><div class="fl b-m-1 b-pc-3 r-emerging" style="width:20.9%"></div></div>
+        </div>
+        <div class="bar" data-n="Qatar">
+          <div class="t"><span>卡塔尔</span><b>4.7</b></div>
+          <div class="tr"><div class="fl b-m-0 b-pc-2 r-emerging" style="width:17.4%"></div></div>
+        </div>
+        <div class="bar" data-n="Australia">
+          <div class="t"><span>澳大利亚</span><b>4.4</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-2 r-core" style="width:16.2%"></div></div>
+        </div>
+        <div class="bar" data-n="Canada">
+          <div class="t"><span>加拿大</span><b>4.3</b></div>
+          <div class="tr"><div class="fl b-m-2 b-pc-2 r-core" style="width:16.1%"></div></div>
+        </div>
+      </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>厂商重心 / Centre of gravity</h2>
+      <div class="firms">
+        <div class="firm">
+          <div class="fn">Bandai Namco 玩具·爱好事业</div>
+          <div class="fm">FY2026 ¥673.9bn ≈ $4.26bn</div>
+          <div class="fnote">公司公开目标是把海外占比提到 50%——反过来说，目前重心仍在日本国内。增量点名 北美 与 中国内陆。</div>
+        </div>
+        <div class="firm">
+          <div class="fn">Funko</div>
+          <div class="fm">FY2024 net sales</div>
+          <div class="stack"><div style="width:65%;background:#3FA9C9"></div><div style="width:35%;background:#7BC043"></div></div>
+          <div class="fk"><span><i style="background:#3FA9C9"></i>美国 65%</span><span><i style="background:#7BC043"></i>美国以外 35%</span></div>
+          <div class="fnote">非美占比 2022 年 27% → 2023 年 31% → 2024 年 35%，公司自述国际市场仍属渗透不足。</div>
+        </div>
+        <div class="firm">
+          <div class="fn">泡泡玛特 POP MART</div>
+          <div class="fm">FY2025 revenue RMB 37.12bn</div>
+          <div class="stack"><div style="width:56.2%;background:#E8A33D"></div><div style="width:21.6%;background:#3FA9C9"></div><div style="width:18.3%;background:#E2445C"></div><div style="width:3.9%;background:#7BC043"></div></div>
+          <div class="fk"><span><i style="background:#E8A33D"></i>中国 56.2%</span><span><i style="background:#3FA9C9"></i>亚太(不含中国) 21.6%</span><span><i style="background:#E2445C"></i>美洲 18.3%</span><span><i style="background:#7BC043"></i>欧洲及其他 3.9%</span></div>
+          <div class="fnote">海外收入占比一年内从 31.8% 升到 43.8%，美洲同比 +748%。</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>关键节点 / Nodes</h2>
+      <div class="nodelist">
+        <div class="nl" data-i="0"><div class="g">展会</div>
+        <div><div class="n">千叶·幕张</div><div class="d">Wonder Festival：全球规模最大的当日版权 GK 展，一年两届，是原型师面向市场的公开考场。</div></div></div>
+        <div class="nl" data-i="1"><div class="g">总部</div>
+        <div><div class="n">静冈</div><div class="d">日本模型工业的根据地，静冈模型展与多家老牌厂商的工厂集中于此。</div></div></div>
+        <div class="nl" data-i="2"><div class="g">总部</div>
+        <div><div class="n">大阪</div><div class="d">海洋堂发源地，GK 从这里从同人走向产业。</div></div></div>
+        <div class="nl" data-i="3"><div class="g">零售集散</div>
+        <div><div class="n">东京·秋叶原</div><div class="d">新品首发、店铺特典与二手流通的全球价格锚点。</div></div></div>
+        <div class="nl" data-i="4"><div class="g">制造</div>
+        <div><div class="n">东莞</div><div class="d">全球最大的潮玩与手办代工带，从开模、注塑到手涂喷涂一条街配齐。</div></div></div>
+        <div class="nl" data-i="5"><div class="g">制造</div>
+        <div><div class="n">深圳</div><div class="d">3D 打印、树脂件与小批量试产的配套中心，打样周期最短。</div></div></div>
+        <div class="nl" data-i="6"><div class="g">展会</div>
+        <div><div class="n">上海</div><div class="d">CP、BW 等大型同人／二次元展的主场，也是潮玩零售密度最高的中国城市。</div></div></div>
+        <div class="nl" data-i="7"><div class="g">总部</div>
+        <div><div class="n">北京</div><div class="d">泡泡玛特总部所在地，中国原创 IP 商业化的指挥中心。</div></div></div>
+        <div class="nl" data-i="8"><div class="g">总部</div>
+        <div><div class="n">中国香港</div><div class="d">Hot Toys 总部；亚洲玩具展与高端收藏品的国际中转站。</div></div></div>
+        <div class="nl" data-i="9"><div class="g">零售集散</div>
+        <div><div class="n">中国台北</div><div class="d">原型与代工设计人才密集，承接大量日系与欧美订单。</div></div></div>
+        <div class="nl" data-i="10"><div class="g">零售集散</div>
+        <div><div class="n">首尔</div><div class="d">东北亚第二大消费市场，游戏 IP 衍生品增长最快。</div></div></div>
+        <div class="nl" data-i="11"><div class="g">零售集散</div>
+        <div><div class="n">曼谷</div><div class="d">东南亚零售枢纽，旗舰店与旅游零售贡献极高。</div></div></div>
+        <div class="nl" data-i="12"><div class="g">零售集散</div>
+        <div><div class="n">新加坡</div><div class="d">东南亚人均最高，常作为区域首发地。</div></div></div>
+        <div class="nl" data-i="13"><div class="g">制造</div>
+        <div><div class="n">河内</div><div class="d">玩具产能转移的主要承接地之一。</div></div></div>
+        <div class="nl" data-i="14"><div class="g">展会</div>
+        <div><div class="n">洛杉矶</div><div class="d">Designer Con：设计师玩具的核心展会，也是美西零售最热的区域。</div></div></div>
+        <div class="nl" data-i="15"><div class="g">展会</div>
+        <div><div class="n">圣地亚哥</div><div class="d">San Diego Comic-Con：限定款与影视衍生的全球风向标。</div></div></div>
+        <div class="nl" data-i="16"><div class="g">零售集散</div>
+        <div><div class="n">纽约</div><div class="d">美东零售与展会重镇（New York Comic Con）。</div></div></div>
+        <div class="nl" data-i="17"><div class="g">总部</div>
+        <div><div class="n">埃弗里特</div><div class="d">Funko 总部，乙烯基收藏玩具的量产范式来源。</div></div></div>
+        <div class="nl" data-i="18"><div class="g">总部</div>
+        <div><div class="n">波塔基特</div><div class="d">孩之宝总部，影视授权衍生体系的老牌中心。</div></div></div>
+        <div class="nl" data-i="19"><div class="g">零售集散</div>
+        <div><div class="n">墨西哥城</div><div class="d">拉美最大零售市场，动漫受众忠诚度极高。</div></div></div>
+        <div class="nl" data-i="20"><div class="g">展会</div>
+        <div><div class="n">圣保罗</div><div class="d">CCXP：南半球规模最大的流行文化展。</div></div></div>
+        <div class="nl" data-i="21"><div class="g">零售集散</div>
+        <div><div class="n">伦敦</div><div class="d">欧洲零售与拍卖流通中心。</div></div></div>
+        <div class="nl" data-i="22"><div class="g">展会</div>
+        <div><div class="n">巴黎</div><div class="d">Japan Expo：欧陆最大的日系动漫展，欧洲市场的入口。</div></div></div>
+        <div class="nl" data-i="23"><div class="g">展会</div>
+        <div><div class="n">杜塞尔多夫</div><div class="d">DoKomi：德语区规模最大的动漫展。</div></div></div>
+        <div class="nl" data-i="24"><div class="g">展会</div>
+        <div><div class="n">卢卡</div><div class="d">Lucca Comics &amp; Games：欧洲历史最久的漫画与游戏展之一。</div></div></div>
+        <div class="nl" data-i="25"><div class="g">零售集散</div>
+        <div><div class="n">悉尼</div><div class="d">大洋洲主要零售与展会城市。</div></div></div>
+        <div class="nl" data-i="26"><div class="g">零售集散</div>
+        <div><div class="n">迪拜</div><div class="d">中东集散地，旅游零售与高客单价并存。</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="sheet">
+  <h2>全部数值 / Full sheet</h2>
+  <div class="sheetscroll">
+    <table>
+      <caption>54 个国家与地区，按估算规模从大到小排。规模合计 140.01 亿美元，即全文采用的全球基数。</caption>
+      <thead>
+        <tr>
+          <th scope="col">地区</th>
+          <th scope="col">规模（亿美元）</th>
+          <th scope="col">人均（美元）</th>
+          <th scope="col">全球占比</th>
+          <th scope="col">产业角色</th>
+          <th scope="col">说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-n="Japan">
+          <td class="geo"><b>日本</b><span class="lat">Japan</span></td>
+          <td class="num">33.10</td>
+          <td class="num">26.91</td>
+          <td class="num">23.6%</td>
+          <td class="rl"><i style="background:#E2445C"></i>IP・原型策源</td>
+          <td class="desc">原型师、涂装师与版权当日贩售制度的发源地。GK 文化从大阪起步，量产完成品与高端收藏线也在这里定标准。</td>
+        </tr>
+        <tr data-n="United States of America">
+          <td class="geo"><b>美国</b><span class="lat">United States of America</span></td>
+          <td class="num">31.92</td>
+          <td class="num">9.39</td>
+          <td class="num">22.8%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">影视与美系 IP 主导，Funko、孩之宝的主场；近两年被中国潮玩强力切入。</td>
+        </tr>
+        <tr data-n="China">
+          <td class="geo"><b>中国大陆</b><span class="lat">China</span></td>
+          <td class="num">30.74</td>
+          <td class="num">2.18</td>
+          <td class="num">22.0%</td>
+          <td class="rl"><i style="background:#E8A33D"></i>制造中枢</td>
+          <td class="desc">同时是全球最大代工基地和增长最快的消费市场之一。市场规模从 2020 年约 37 亿元升至 2024 年约 111 亿元，2026 年预计 162 亿元。</td>
+        </tr>
+        <tr data-n="South Korea">
+          <td class="geo"><b>韩国</b><span class="lat">South Korea</span></td>
+          <td class="num">5.32</td>
+          <td class="num">10.29</td>
+          <td class="num">3.8%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">高人均、强线上二手流通，游戏 IP 衍生占比高。</td>
+        </tr>
+        <tr data-n="Thailand">
+          <td class="geo"><b>泰国</b><span class="lat">Thailand</span></td>
+          <td class="num">2.96</td>
+          <td class="num">4.12</td>
+          <td class="num">2.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">东南亚零售枢纽，毛绒与盲盒品类渗透极快。</td>
+        </tr>
+        <tr data-n="France">
+          <td class="geo"><b>法国</b><span class="lat">France</span></td>
+          <td class="num">2.60</td>
+          <td class="num">3.80</td>
+          <td class="num">1.9%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">欧洲最强的日系动漫土壤，Japan Expo 是欧陆最大出口。</td>
+        </tr>
+        <tr data-n="Taiwan">
+          <td class="geo"><b>中国台湾</b><span class="lat">Taiwan</span></td>
+          <td class="num">2.36</td>
+          <td class="num">10.09</td>
+          <td class="num">1.7%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">原型师与代工设计人才密度高，是日系与陆系之间的中转层。</td>
+        </tr>
+        <tr data-n="Germany">
+          <td class="geo"><b>德国</b><span class="lat">Germany</span></td>
+          <td class="num">2.36</td>
+          <td class="num">2.79</td>
+          <td class="num">1.7%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">模型／拼装传统深厚，收藏级需求稳定。</td>
+        </tr>
+        <tr data-n="United Kingdom">
+          <td class="geo"><b>英国</b><span class="lat">United Kingdom</span></td>
+          <td class="num">2.13</td>
+          <td class="num">3.09</td>
+          <td class="num">1.5%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">影视衍生与零售连锁成熟。</td>
+        </tr>
+        <tr data-n="Indonesia">
+          <td class="geo"><b>印度尼西亚</b><span class="lat">Indonesia</span></td>
+          <td class="num">1.77</td>
+          <td class="num">0.63</td>
+          <td class="num">1.3%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">人口红利大，客单价低，增长靠门店密度铺开。</td>
+        </tr>
+        <tr data-n="Canada">
+          <td class="geo"><b>加拿大</b><span class="lat">Canada</span></td>
+          <td class="num">1.77</td>
+          <td class="num">4.32</td>
+          <td class="num">1.3%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Mexico">
+          <td class="geo"><b>墨西哥</b><span class="lat">Mexico</span></td>
+          <td class="num">1.77</td>
+          <td class="num">1.36</td>
+          <td class="num">1.3%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">拉美第一大市场，动漫受众极其忠诚。</td>
+        </tr>
+        <tr data-n="Brazil">
+          <td class="geo"><b>巴西</b><span class="lat">Brazil</span></td>
+          <td class="num">1.54</td>
+          <td class="num">0.72</td>
+          <td class="num">1.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">CCXP 是南半球最大的流行文化展。</td>
+        </tr>
+        <tr data-n="Hong Kong">
+          <td class="geo"><b>中国香港</b><span class="lat">Hong Kong</span></td>
+          <td class="num">1.42</td>
+          <td class="num">18.93</td>
+          <td class="num">1.0%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">Hot Toys 所在地，1/6 真人比例收藏品的全球高地。</td>
+        </tr>
+        <tr data-n="Vietnam">
+          <td class="geo"><b>越南</b><span class="lat">Vietnam</span></td>
+          <td class="num">1.42</td>
+          <td class="num">1.41</td>
+          <td class="num">1.0%</td>
+          <td class="rl"><i style="background:#E8A33D"></i>制造中枢</td>
+          <td class="desc">承接中国转出的部分玩具产能，本地消费同步起步。</td>
+        </tr>
+        <tr data-n="Italy">
+          <td class="geo"><b>意大利</b><span class="lat">Italy</span></td>
+          <td class="num">1.42</td>
+          <td class="num">2.41</td>
+          <td class="num">1.0%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">Lucca 展会带动，动漫受众基数大。</td>
+        </tr>
+        <tr data-n="Malaysia">
+          <td class="geo"><b>马来西亚</b><span class="lat">Malaysia</span></td>
+          <td class="num">1.18</td>
+          <td class="num">3.42</td>
+          <td class="num">0.8%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">华语圈消费习惯外溢，线上渠道为主。</td>
+        </tr>
+        <tr data-n="Philippines">
+          <td class="geo"><b>菲律宾</b><span class="lat">Philippines</span></td>
+          <td class="num">1.18</td>
+          <td class="num">1.03</td>
+          <td class="num">0.8%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">美系 IP 认知度高，二手与代购活跃。</td>
+        </tr>
+        <tr data-n="Spain">
+          <td class="geo"><b>西班牙</b><span class="lat">Spain</span></td>
+          <td class="num">1.18</td>
+          <td class="num">2.44</td>
+          <td class="num">0.8%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Australia">
+          <td class="geo"><b>澳大利亚</b><span class="lat">Australia</span></td>
+          <td class="num">1.18</td>
+          <td class="num">4.37</td>
+          <td class="num">0.8%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Singapore">
+          <td class="geo"><b>新加坡</b><span class="lat">Singapore</span></td>
+          <td class="num">1.06</td>
+          <td class="num">17.67</td>
+          <td class="num">0.8%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">东南亚最高人均，区域首发与展会中转站。</td>
+        </tr>
+        <tr data-n="Russia">
+          <td class="geo"><b>俄罗斯</b><span class="lat">Russia</span></td>
+          <td class="num">0.83</td>
+          <td class="num">0.58</td>
+          <td class="num">0.6%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">官方渠道受限，灰色进口与本土翻版占比高。</td>
+        </tr>
+        <tr data-n="India">
+          <td class="geo"><b>印度</b><span class="lat">India</span></td>
+          <td class="num">0.71</td>
+          <td class="num">0.05</td>
+          <td class="num">0.5%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">基数极低，动漫消费刚起步。</td>
+        </tr>
+        <tr data-n="Netherlands">
+          <td class="geo"><b>荷兰</b><span class="lat">Netherlands</span></td>
+          <td class="num">0.71</td>
+          <td class="num">3.92</td>
+          <td class="num">0.5%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Saudi Arabia">
+          <td class="geo"><b>沙特阿拉伯</b><span class="lat">Saudi Arabia</span></td>
+          <td class="num">0.65</td>
+          <td class="num">1.97</td>
+          <td class="num">0.5%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">政策转向后动漫与游戏消费投入激增。</td>
+        </tr>
+        <tr data-n="United Arab Emirates">
+          <td class="geo"><b>阿联酋</b><span class="lat">United Arab Emirates</span></td>
+          <td class="num">0.59</td>
+          <td class="num">5.62</td>
+          <td class="num">0.4%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">中东最高人均，旅游零售拉动明显。</td>
+        </tr>
+        <tr data-n="Poland">
+          <td class="geo"><b>波兰</b><span class="lat">Poland</span></td>
+          <td class="num">0.53</td>
+          <td class="num">1.41</td>
+          <td class="num">0.4%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">中东欧增长最快的市场。</td>
+        </tr>
+        <tr data-n="Turkey">
+          <td class="geo"><b>土耳其</b><span class="lat">Turkey</span></td>
+          <td class="num">0.50</td>
+          <td class="num">0.58</td>
+          <td class="num">0.4%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Argentina">
+          <td class="geo"><b>阿根廷</b><span class="lat">Argentina</span></td>
+          <td class="num">0.50</td>
+          <td class="num">1.09</td>
+          <td class="num">0.4%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Chile">
+          <td class="geo"><b>智利</b><span class="lat">Chile</span></td>
+          <td class="num">0.35</td>
+          <td class="num">1.79</td>
+          <td class="num">0.2%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Belgium">
+          <td class="geo"><b>比利时</b><span class="lat">Belgium</span></td>
+          <td class="num">0.33</td>
+          <td class="num">2.80</td>
+          <td class="num">0.2%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Sweden">
+          <td class="geo"><b>瑞典</b><span class="lat">Sweden</span></td>
+          <td class="num">0.33</td>
+          <td class="num">3.11</td>
+          <td class="num">0.2%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Colombia">
+          <td class="geo"><b>哥伦比亚</b><span class="lat">Colombia</span></td>
+          <td class="num">0.30</td>
+          <td class="num">0.58</td>
+          <td class="num">0.2%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Switzerland">
+          <td class="geo"><b>瑞士</b><span class="lat">Switzerland</span></td>
+          <td class="num">0.28</td>
+          <td class="num">3.15</td>
+          <td class="num">0.2%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Israel">
+          <td class="geo"><b>以色列</b><span class="lat">Israel</span></td>
+          <td class="num">0.26</td>
+          <td class="num">2.63</td>
+          <td class="num">0.2%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Austria">
+          <td class="geo"><b>奥地利</b><span class="lat">Austria</span></td>
+          <td class="num">0.24</td>
+          <td class="num">2.61</td>
+          <td class="num">0.2%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="New Zealand">
+          <td class="geo"><b>新西兰</b><span class="lat">New Zealand</span></td>
+          <td class="num">0.21</td>
+          <td class="num">4.04</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Denmark">
+          <td class="geo"><b>丹麦</b><span class="lat">Denmark</span></td>
+          <td class="num">0.19</td>
+          <td class="num">3.17</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="South Africa">
+          <td class="geo"><b>南非</b><span class="lat">South Africa</span></td>
+          <td class="num">0.19</td>
+          <td class="num">0.30</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Norway">
+          <td class="geo"><b>挪威</b><span class="lat">Norway</span></td>
+          <td class="num">0.17</td>
+          <td class="num">3.04</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Czechia">
+          <td class="geo"><b>捷克</b><span class="lat">Czechia</span></td>
+          <td class="num">0.17</td>
+          <td class="num">1.56</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Portugal">
+          <td class="geo"><b>葡萄牙</b><span class="lat">Portugal</span></td>
+          <td class="num">0.17</td>
+          <td class="num">1.60</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Egypt">
+          <td class="geo"><b>埃及</b><span class="lat">Egypt</span></td>
+          <td class="num">0.17</td>
+          <td class="num">0.15</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Peru">
+          <td class="geo"><b>秘鲁</b><span class="lat">Peru</span></td>
+          <td class="num">0.15</td>
+          <td class="num">0.44</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Finland">
+          <td class="geo"><b>芬兰</b><span class="lat">Finland</span></td>
+          <td class="num">0.14</td>
+          <td class="num">2.50</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Ireland">
+          <td class="geo"><b>爱尔兰</b><span class="lat">Ireland</span></td>
+          <td class="num">0.14</td>
+          <td class="num">2.64</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#3FA9C9"></i>成熟消费市场</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Romania">
+          <td class="geo"><b>罗马尼亚</b><span class="lat">Romania</span></td>
+          <td class="num">0.14</td>
+          <td class="num">0.74</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Qatar">
+          <td class="geo"><b>卡塔尔</b><span class="lat">Qatar</span></td>
+          <td class="num">0.14</td>
+          <td class="num">4.67</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Greece">
+          <td class="geo"><b>希腊</b><span class="lat">Greece</span></td>
+          <td class="num">0.12</td>
+          <td class="num">1.15</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Hungary">
+          <td class="geo"><b>匈牙利</b><span class="lat">Hungary</span></td>
+          <td class="num">0.11</td>
+          <td class="num">1.15</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Kuwait">
+          <td class="geo"><b>科威特</b><span class="lat">Kuwait</span></td>
+          <td class="num">0.11</td>
+          <td class="num">2.24</td>
+          <td class="num">0.1%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Ukraine">
+          <td class="geo"><b>乌克兰</b><span class="lat">Ukraine</span></td>
+          <td class="num">0.07</td>
+          <td class="num">0.19</td>
+          <td class="num">0.0%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Nigeria">
+          <td class="geo"><b>尼日利亚</b><span class="lat">Nigeria</span></td>
+          <td class="num">0.07</td>
+          <td class="num">0.03</td>
+          <td class="num">0.0%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+        <tr data-n="Morocco">
+          <td class="geo"><b>摩洛哥</b><span class="lat">Morocco</span></td>
+          <td class="num">0.06</td>
+          <td class="num">0.16</td>
+          <td class="num">0.0%</td>
+          <td class="rl"><i style="background:#7BC043"></i>高增长新兴</td>
+          <td class="desc">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  </section>
+</div>
+
+<footer>
+  <b>口径打架，先说清楚</b>　这个品类没有一个各国通用的定义，所以“全球规模”没有可信的单一数字。英文行业报告统计的是 action figures，把北美算成 38–42%、亚太只有 18–27%；亚洲口径的“手办／フィギュア”把景品、扭蛋、盲盒、GK、拼装都算进来，于是亚太变成约 58%。各家给出的全球总额从 85 亿到 167 亿美元不等。<b>图上采用亚洲口径（广义角色模型）</b>，全球基数取 140 亿美元。<br>
+  <b>一手来源</b>　AJA《アニメ産業レポート 2025》（2024 年数据）：全球动画产业市场 ¥3.84 兆（约 245 亿美元），海外 ¥2.17 兆／56%，国内 ¥1.67 兆／44%，海外同比 +26%；制作侧 ¥4,662 亿。IOEA 收录 136 场动漫活动，覆盖 51 个国家与地区（2023 年为 123 场／46 国）。Bandai Namco IR：玩具·爱好事业 FY2026 净销售额 ¥6,739 亿（约 42.6 亿美元），为集团第一大板块，Gundam 单 IP ¥2,543 亿；管理层目标海外占比 50%。Funko Form 10-K：美国以外销售占 2024 年净销售额约 35%。POP MART 2025 年报（HKEX）：营收 RMB 371.2 亿，海外 162.7 亿／43.8%，其中亚太 80.1 亿、美洲 68.1 亿、欧洲及其他 14.5 亿。日本玩具协会／JACTA：2024 年扭蛋出货规模 ¥1,410 亿，同比 +22.6%。<br>
+  <b>国别数值是估算</b>　没有任何机构按国家公布这个品类的销售额。图上的国别数字是我按上述区域比例、人口和该国动漫零售活跃度拆出来的<b>量级估算</b>，用于比较相对位置，不能当统计数据引用。「人均」= 该国估算规模 ÷ 总人口，不是玩家人均消费。<br>
+  <b>投影</b>　Miller 圆柱投影，南纬 58° 以南裁去。底图 Natural Earth（world-atlas 110m），已做 Douglas–Peucker 简化。
+</footer>
+
+</div>
+
+<script>
+/*
+ * 页面所有内容都已经是静态 HTML：换视图、图例、排行、筛选都靠单选框 + CSS，
+ * 关掉 JavaScript 也能用。下面这段只做一件增强：把光标指到的地方写进右上角读数。
+ */
+try{
+const DATA = {"Japan":{"zh":"日本","m":33.1,"pc":26.91,"role":"ip","note":"原型师、涂装师与版权当日贩售制度的发源地。GK 文化从大阪起步，量产完成品与高端收藏线也在这里定标准。"},"China":{"zh":"中国大陆","m":30.74,"pc":2.18,"role":"mfg","note":"同时是全球最大代工基地和增长最快的消费市场之一。市场规模从 2020 年约 37 亿元升至 2024 年约 111 亿元，2026 年预计 162 亿元。"},"United States of America":{"zh":"美国","m":31.92,"pc":9.39,"role":"core","note":"影视与美系 IP 主导，Funko、孩之宝的主场；近两年被中国潮玩强力切入。"},"South Korea":{"zh":"韩国","m":5.32,"pc":10.29,"role":"core","note":"高人均、强线上二手流通，游戏 IP 衍生占比高。"},"Taiwan":{"zh":"中国台湾","m":2.36,"pc":10.09,"role":"core","note":"原型师与代工设计人才密度高，是日系与陆系之间的中转层。"},"Hong Kong":{"zh":"中国香港","m":1.42,"pc":18.93,"role":"core","note":"Hot Toys 所在地，1/6 真人比例收藏品的全球高地。"},"Singapore":{"zh":"新加坡","m":1.06,"pc":17.67,"role":"core","note":"东南亚最高人均，区域首发与展会中转站。"},"Thailand":{"zh":"泰国","m":2.96,"pc":4.12,"role":"emerging","note":"东南亚零售枢纽，毛绒与盲盒品类渗透极快。"},"Malaysia":{"zh":"马来西亚","m":1.18,"pc":3.42,"role":"emerging","note":"华语圈消费习惯外溢，线上渠道为主。"},"Vietnam":{"zh":"越南","m":1.42,"pc":1.41,"role":"mfg","note":"承接中国转出的部分玩具产能，本地消费同步起步。"},"Indonesia":{"zh":"印度尼西亚","m":1.77,"pc":0.63,"role":"emerging","note":"人口红利大，客单价低，增长靠门店密度铺开。"},"Philippines":{"zh":"菲律宾","m":1.18,"pc":1.03,"role":"emerging","note":"美系 IP 认知度高，二手与代购活跃。"},"India":{"zh":"印度","m":0.71,"pc":0.05,"role":"emerging","note":"基数极低，动漫消费刚起步。"},"France":{"zh":"法国","m":2.6,"pc":3.8,"role":"core","note":"欧洲最强的日系动漫土壤，Japan Expo 是欧陆最大出口。"},"Germany":{"zh":"德国","m":2.36,"pc":2.79,"role":"core","note":"模型／拼装传统深厚，收藏级需求稳定。"},"United Kingdom":{"zh":"英国","m":2.13,"pc":3.09,"role":"core","note":"影视衍生与零售连锁成熟。"},"Italy":{"zh":"意大利","m":1.42,"pc":2.41,"role":"core","note":"Lucca 展会带动，动漫受众基数大。"},"Spain":{"zh":"西班牙","m":1.18,"pc":2.44,"role":"core","note":""},"Netherlands":{"zh":"荷兰","m":0.71,"pc":3.92,"role":"core","note":""},"Belgium":{"zh":"比利时","m":0.33,"pc":2.8,"role":"core","note":""},"Switzerland":{"zh":"瑞士","m":0.28,"pc":3.15,"role":"core","note":""},"Austria":{"zh":"奥地利","m":0.24,"pc":2.61,"role":"core","note":""},"Sweden":{"zh":"瑞典","m":0.33,"pc":3.11,"role":"core","note":""},"Norway":{"zh":"挪威","m":0.17,"pc":3.04,"role":"core","note":""},"Denmark":{"zh":"丹麦","m":0.19,"pc":3.17,"role":"core","note":""},"Finland":{"zh":"芬兰","m":0.14,"pc":2.5,"role":"core","note":""},"Ireland":{"zh":"爱尔兰","m":0.14,"pc":2.64,"role":"core","note":""},"Poland":{"zh":"波兰","m":0.53,"pc":1.41,"role":"emerging","note":"中东欧增长最快的市场。"},"Czechia":{"zh":"捷克","m":0.17,"pc":1.56,"role":"emerging","note":""},"Portugal":{"zh":"葡萄牙","m":0.17,"pc":1.6,"role":"emerging","note":""},"Greece":{"zh":"希腊","m":0.12,"pc":1.15,"role":"emerging","note":""},"Romania":{"zh":"罗马尼亚","m":0.14,"pc":0.74,"role":"emerging","note":""},"Hungary":{"zh":"匈牙利","m":0.11,"pc":1.15,"role":"emerging","note":""},"Russia":{"zh":"俄罗斯","m":0.83,"pc":0.58,"role":"emerging","note":"官方渠道受限，灰色进口与本土翻版占比高。"},"Ukraine":{"zh":"乌克兰","m":0.07,"pc":0.19,"role":"emerging","note":""},"Turkey":{"zh":"土耳其","m":0.5,"pc":0.58,"role":"emerging","note":""},"Canada":{"zh":"加拿大","m":1.77,"pc":4.32,"role":"core","note":""},"Mexico":{"zh":"墨西哥","m":1.77,"pc":1.36,"role":"emerging","note":"拉美第一大市场，动漫受众极其忠诚。"},"Brazil":{"zh":"巴西","m":1.54,"pc":0.72,"role":"emerging","note":"CCXP 是南半球最大的流行文化展。"},"Argentina":{"zh":"阿根廷","m":0.5,"pc":1.09,"role":"emerging","note":""},"Chile":{"zh":"智利","m":0.35,"pc":1.79,"role":"emerging","note":""},"Colombia":{"zh":"哥伦比亚","m":0.3,"pc":0.58,"role":"emerging","note":""},"Peru":{"zh":"秘鲁","m":0.15,"pc":0.44,"role":"emerging","note":""},"Australia":{"zh":"澳大利亚","m":1.18,"pc":4.37,"role":"core","note":""},"New Zealand":{"zh":"新西兰","m":0.21,"pc":4.04,"role":"core","note":""},"Saudi Arabia":{"zh":"沙特阿拉伯","m":0.65,"pc":1.97,"role":"emerging","note":"政策转向后动漫与游戏消费投入激增。"},"United Arab Emirates":{"zh":"阿联酋","m":0.59,"pc":5.62,"role":"emerging","note":"中东最高人均，旅游零售拉动明显。"},"Qatar":{"zh":"卡塔尔","m":0.14,"pc":4.67,"role":"emerging","note":""},"Kuwait":{"zh":"科威特","m":0.11,"pc":2.24,"role":"emerging","note":""},"Israel":{"zh":"以色列","m":0.26,"pc":2.63,"role":"core","note":""},"Egypt":{"zh":"埃及","m":0.17,"pc":0.15,"role":"emerging","note":""},"Morocco":{"zh":"摩洛哥","m":0.06,"pc":0.16,"role":"emerging","note":""},"South Africa":{"zh":"南非","m":0.19,"pc":0.3,"role":"emerging","note":""},"Nigeria":{"zh":"尼日利亚","m":0.07,"pc":0.03,"role":"emerging","note":""}};
+const NODES = [{"zh":"千叶·幕张","en":"CHIBA MAKUHARI","lon":139.94,"lat":35.65,"kind":"expo","d":"Wonder Festival：全球规模最大的当日版权 GK 展，一年两届，是原型师面向市场的公开考场。"},{"zh":"静冈","en":"SHIZUOKA","lon":138.38,"lat":34.98,"kind":"hq","d":"日本模型工业的根据地，静冈模型展与多家老牌厂商的工厂集中于此。"},{"zh":"大阪","en":"OSAKA","lon":135.5,"lat":34.69,"kind":"hq","d":"海洋堂发源地，GK 从这里从同人走向产业。"},{"zh":"东京·秋叶原","en":"AKIHABARA","lon":139.77,"lat":35.7,"kind":"hub","d":"新品首发、店铺特典与二手流通的全球价格锚点。"},{"zh":"东莞","en":"DONGGUAN","lon":113.75,"lat":23.02,"kind":"factory","d":"全球最大的潮玩与手办代工带，从开模、注塑到手涂喷涂一条街配齐。"},{"zh":"深圳","en":"SHENZHEN","lon":114.06,"lat":22.55,"kind":"factory","d":"3D 打印、树脂件与小批量试产的配套中心，打样周期最短。"},{"zh":"上海","en":"SHANGHAI","lon":121.47,"lat":31.23,"kind":"expo","d":"CP、BW 等大型同人／二次元展的主场，也是潮玩零售密度最高的中国城市。"},{"zh":"北京","en":"BEIJING","lon":116.4,"lat":39.9,"kind":"hq","d":"泡泡玛特总部所在地，中国原创 IP 商业化的指挥中心。"},{"zh":"中国香港","en":"HONG KONG","lon":114.17,"lat":22.32,"kind":"hq","d":"Hot Toys 总部；亚洲玩具展与高端收藏品的国际中转站。"},{"zh":"中国台北","en":"TAIPEI","lon":121.56,"lat":25.03,"kind":"hub","d":"原型与代工设计人才密集，承接大量日系与欧美订单。"},{"zh":"首尔","en":"SEOUL","lon":126.98,"lat":37.57,"kind":"hub","d":"东北亚第二大消费市场，游戏 IP 衍生品增长最快。"},{"zh":"曼谷","en":"BANGKOK","lon":100.5,"lat":13.75,"kind":"hub","d":"东南亚零售枢纽，旗舰店与旅游零售贡献极高。"},{"zh":"新加坡","en":"SINGAPORE","lon":103.82,"lat":1.35,"kind":"hub","d":"东南亚人均最高，常作为区域首发地。"},{"zh":"河内","en":"HANOI","lon":105.85,"lat":21.03,"kind":"factory","d":"玩具产能转移的主要承接地之一。"},{"zh":"洛杉矶","en":"LOS ANGELES","lon":-118.24,"lat":34.05,"kind":"expo","d":"Designer Con：设计师玩具的核心展会，也是美西零售最热的区域。"},{"zh":"圣地亚哥","en":"SAN DIEGO","lon":-117.16,"lat":32.72,"kind":"expo","d":"San Diego Comic-Con：限定款与影视衍生的全球风向标。"},{"zh":"纽约","en":"NEW YORK","lon":-74,"lat":40.71,"kind":"hub","d":"美东零售与展会重镇（New York Comic Con）。"},{"zh":"埃弗里特","en":"EVERETT WA","lon":-122.2,"lat":47.98,"kind":"hq","d":"Funko 总部，乙烯基收藏玩具的量产范式来源。"},{"zh":"波塔基特","en":"PAWTUCKET RI","lon":-71.38,"lat":41.88,"kind":"hq","d":"孩之宝总部，影视授权衍生体系的老牌中心。"},{"zh":"墨西哥城","en":"MEXICO CITY","lon":-99.13,"lat":19.43,"kind":"hub","d":"拉美最大零售市场，动漫受众忠诚度极高。"},{"zh":"圣保罗","en":"SAO PAULO","lon":-46.63,"lat":-23.55,"kind":"expo","d":"CCXP：南半球规模最大的流行文化展。"},{"zh":"伦敦","en":"LONDON","lon":-0.13,"lat":51.51,"kind":"hub","d":"欧洲零售与拍卖流通中心。"},{"zh":"巴黎","en":"PARIS","lon":2.35,"lat":48.86,"kind":"expo","d":"Japan Expo：欧陆最大的日系动漫展，欧洲市场的入口。"},{"zh":"杜塞尔多夫","en":"DUSSELDORF","lon":6.77,"lat":51.23,"kind":"expo","d":"DoKomi：德语区规模最大的动漫展。"},{"zh":"卢卡","en":"LUCCA","lon":10.5,"lat":43.84,"kind":"expo","d":"Lucca Comics & Games：欧洲历史最久的漫画与游戏展之一。"},{"zh":"悉尼","en":"SYDNEY","lon":151.21,"lat":-33.87,"kind":"hub","d":"大洋洲主要零售与展会城市。"},{"zh":"迪拜","en":"DUBAI","lon":55.27,"lat":25.2,"kind":"hub","d":"中东集散地，旅游零售与高客单价并存。"}];
+const ROLE = {"ip":{"c":"#E2445C","label":"IP・原型策源"},"mfg":{"c":"#E8A33D","label":"制造中枢"},"core":{"c":"#3FA9C9","label":"成熟消费市场"},"emerging":{"c":"#7BC043","label":"高增长新兴"}};
+const NODEKIND = {"expo":{"label":"展会"},"factory":{"label":"制造"},"hq":{"label":"总部"},"hub":{"label":"零售集散"}};
+const TOTAL = 140.01;
+
+const readout = document.getElementById("readout");
+const svg = document.querySelector("svg.map");
+const paths = {};
+svg.querySelectorAll("[data-name]").forEach(el => { paths[el.dataset.name] = el; });
+const barRows = [...document.querySelectorAll(".bar")];
+let locked = false;
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+
+function showCountry(name){
+  const d = DATA[name];
+  if(!d){
+    readout.className = "hint";
+    readout.innerHTML = `<b style="font-family:var(--dp);font-size:20px">${esc(name)}</b><br>暂无该地区的独立估算。`;
+    return;
+  }
+  readout.className = "readout";
+  readout.innerHTML = `
+    <div class="rname">${esc(d.zh)}</div>
+    <div class="rlatin">${esc(name)}</div>
+    <div class="row"><span>市场规模</span><b>${d.m.toFixed(2)} 亿美元</b></div>
+    <div class="row"><span>人均年消费</span><b>${d.pc.toFixed(2)} 美元</b></div>
+    <div class="row"><span>全球占比</span><b>${(d.m / TOTAL * 100).toFixed(1)}%</b></div>
+    <div class="row"><span>产业角色</span><b style="color:${ROLE[d.role].c}">${esc(ROLE[d.role].label)}</b></div>
+    ${d.note ? `<div class="note">${esc(d.note)}</div>` : ""}`;
+}
+function showNode(n){
+  readout.className = "readout";
+  readout.innerHTML = `
+    <div class="rname">${esc(n.zh)}</div>
+    <div class="rlatin">${esc(n.en)} · ${Math.abs(n.lat).toFixed(1)}°${n.lat < 0 ? "S" : "N"} ${Math.abs(n.lon).toFixed(1)}°${n.lon < 0 ? "W" : "E"}</div>
+    <div class="row"><span>节点类型</span><b>${esc(NODEKIND[n.kind].label)}</b></div>
+    <div class="note">${esc(n.d)}</div>`;
+}
+function resetReadout(){
+  readout.className = "hint";
+  readout.textContent = "把光标移到地图上的国家或城市标记（手机上点一下）就会显示它的规格；完整数值见页面下方的数据表。";
+}
+function highlight(name){
+  for(const k in paths) paths[k].classList.toggle("hot", k === name);
+  barRows.forEach(r => r.classList.toggle("act", r.dataset.n === name));
+}
+
+function hit(t){
+  if(!t || !t.dataset) return null;
+  if(t.dataset.node !== undefined) return {node: NODES[+t.dataset.node]};
+  if(t.dataset.name) return {name: t.dataset.name};
+  return null;
+}
+svg.addEventListener("mouseover", e => {
+  const h = hit(e.target);
+  if(!h || locked) return;
+  if(h.node){ showNode(h.node); highlight(null); }
+  else { showCountry(h.name); highlight(h.name); }
+});
+svg.addEventListener("mouseleave", () => { if(!locked){ resetReadout(); highlight(null); } });
+svg.addEventListener("click", e => {
+  const h = hit(e.target);
+  if(h && h.node){ showNode(h.node); highlight(null); locked = true; }
+  else if(h){ showCountry(h.name); highlight(h.name); locked = true; }
+  else { locked = false; resetReadout(); highlight(null); }
+});
+
+/* 排行条和节点列表同样可以驱动读数 */
+barRows.forEach(r => r.addEventListener("mouseenter", () => {
+  if(locked) return;
+  showCountry(r.dataset.n); highlight(r.dataset.n);
+}));
+document.querySelectorAll(".nl").forEach(el => el.addEventListener("mouseenter", () => {
+  if(!locked) showNode(NODES[+el.dataset.i]);
+}));
+document.querySelectorAll("tbody tr[data-n]").forEach(tr => tr.addEventListener("mouseenter", () => {
+  if(!locked){ showCountry(tr.dataset.n); highlight(tr.dataset.n); }
+}));
+}catch(err){
+  console.error(err);
+}
+</script>
+</body>
+</html>

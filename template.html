@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>全球手办与收藏模型分布图</title>
+<meta name="description" content="手办、扭蛋、盲盒与角色模型的全球分布：市场总量、人均浓度、产业分工三种读法，附口径说明与一手来源。">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#26282C">
+<style>
+:root{
+  --ground:#26282C;
+  --panel:#2F3238;
+  --panel2:#383C43;
+  --line:#4A4E57;
+  --land:#454951;
+  --nodata:#3A3D44;
+  --ink:#E6E2D9;
+  --muted:#979BA3;
+  --mark:#EDE9E0;
+  --focus:#7FE0D8;
+  --cn:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  /* 显示体与等宽体都只用系统字体：不连外网，离线和内网都能正常打开 */
+  --dp:"Barlow Condensed","Oswald","Haettenschweiler","Arial Narrow",var(--cn);
+  --mo:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--cn);
+  -webkit-font-smoothing:antialiased;
+  padding:20px 16px 40px;
+}
+.wrap{max-width:1180px;margin:0 auto}
+
+/* ---------- masthead: reads like a paint / spec sheet header ---------- */
+.head{border-top:2px solid var(--ink);padding-top:10px;margin-bottom:18px}
+.eyebrow{
+  font-family:var(--mo);font-size:10.5px;letter-spacing:.22em;
+  color:var(--muted);text-transform:uppercase;display:flex;
+  justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px;
+}
+h1{
+  font-family:var(--dp);font-weight:700;font-size:clamp(30px,6.4vw,54px);
+  line-height:.98;letter-spacing:.005em;margin:0 0 8px;
+}
+h1 em{font-style:normal;color:var(--muted);font-weight:400}
+.sub{font-size:12.5px;line-height:1.65;color:var(--muted);max-width:62ch}
+
+/* ---------- top stats strip ---------- */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);margin:18px 0;}
+.stat{background:var(--panel);padding:11px 12px 12px}
+.stat b{display:block;font-family:var(--dp);font-weight:700;font-size:26px;line-height:1;margin-bottom:4px}
+.stat b .u{font-size:14px}
+.stat span{font-family:var(--mo);font-size:9.5px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.stat i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:3px}
+
+/* ---------- 视图开关：用单选框驱动，没有 JavaScript 也能换图 ---------- */
+.vsel{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  clip-path:inset(50%);overflow:hidden;white-space:nowrap}
+
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:1fr 268px;gap:14px;align-items:start}
+/* min-width:0 让网格项可以比地图窄，横向滚动交给 .scroller，页面本身不横滚 */
+.mapbox{background:var(--panel);border:1px solid var(--line);position:relative;min-width:0}
+
+/* view switch — rendered as paint-chip tabs */
+.tabs{display:flex;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{
+  flex:1;min-width:96px;background:none;border:0;border-right:1px solid var(--line);
+  color:var(--muted);padding:9px 8px 8px;cursor:pointer;font-family:var(--cn);
+  font-size:12.5px;text-align:left;position:relative;transition:color .15s,background .15s;
+}
+.tab:last-child{border-right:0}
+.tab .k{font-family:var(--mo);font-size:9px;letter-spacing:.14em;display:block;opacity:.65;margin-bottom:2px}
+.tab:hover{background:var(--panel2);color:var(--ink)}
+
+.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}
+svg.map{display:block;width:100%;height:auto;background:#212226}
+@media (max-width:700px){
+  svg.map{min-width:660px}
+}
+.c{fill:var(--nodata);stroke:#26282C;stroke-width:.4;vector-effect:non-scaling-stroke;transition:fill .25s ease,opacity .25s ease}
+.c.hot{stroke:var(--mark);stroke-width:1.1}
+.node{pointer-events:none}
+.node line{stroke:var(--mark);stroke-width:.9;vector-effect:non-scaling-stroke}
+.node circle{fill:none;stroke:var(--mark);stroke-width:.9;vector-effect:non-scaling-stroke}
+.node rect{fill:var(--mark)}
+.node polygon{fill:var(--mark)}
+.nodehit{fill:transparent;cursor:pointer}
+
+/* legend: the paint-chip row (signature element) */
+.legend{border-top:1px solid var(--line);padding:11px 12px 12px;display:flex;
+  gap:14px;flex-wrap:wrap;align-items:flex-end}
+.leg{display:none}
+.chips{display:flex;align-items:flex-end;gap:0}
+.chip{width:38px}
+.chip .sw{height:22px;border:1px solid rgba(0,0,0,.35);border-right:0}
+.chip:last-child .sw{border-right:1px solid rgba(0,0,0,.35)}
+.chip .lb{font-family:var(--mo);font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.02em}
+.legtitle{font-family:var(--mo);font-size:9.5px;letter-spacing:.16em;color:var(--muted);
+  text-transform:uppercase;margin-bottom:7px}
+.cats{display:flex;gap:13px;flex-wrap:wrap}
+.cat{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);cursor:pointer}
+.cat i{width:11px;height:11px;display:block;flex:0 0 auto;border:1px solid rgba(0,0,0,.35)}
+.cat:hover{color:var(--ink)}
+.marks{display:flex;gap:13px;flex-wrap:wrap;font-family:var(--mo);font-size:9.5px;color:var(--muted)}
+.marks span{display:flex;align-items:center;gap:5px}
+.marks svg{overflow:visible}
+.legright{margin-left:auto}
+
+/* right rail — spec readout */
+.rail{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line)}
+.card h2{
+  font-family:var(--mo);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin:0;padding:9px 12px 8px;border-bottom:1px solid var(--line);font-weight:500;
+}
+.readout{padding:12px}
+.rname{font-family:var(--dp);font-weight:700;font-size:26px;line-height:1;margin-bottom:2px}
+.rlatin{font-family:var(--mo);font-size:9.5px;letter-spacing:.14em;color:var(--muted);
+  text-transform:uppercase;margin-bottom:11px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;
+  border-bottom:1px dotted var(--line);font-size:12px}
+.row:last-of-type{border-bottom:0}
+.row span{color:var(--muted)}
+.row b{font-family:var(--mo);font-weight:500;font-size:12.5px}
+.note{font-size:11.5px;line-height:1.6;color:var(--muted);margin-top:10px;
+  border-left:2px solid var(--line);padding-left:9px}
+.hint{padding:14px 12px 16px;font-size:12px;color:var(--muted);line-height:1.65}
+
+/* ranking bars */
+.bars{padding:9px 12px 13px}
+.barset{display:none}
+.bar{margin-bottom:7px}
+.bar .t{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px;gap:8px}
+.bar .t b{font-family:var(--mo);font-weight:500;color:var(--muted);font-size:11px}
+.bar .tr{height:6px;background:#22242A}
+.bar .fl{height:6px;transition:width .4s cubic-bezier(.3,.9,.3,1)}
+.bar.act .t{color:#fff}
+.btitle{display:none}
+
+/* firms */
+.firms{padding:11px 12px 13px}
+.firm{margin-bottom:12px}
+.firm:last-child{margin-bottom:2px}
+.firm .fn{font-size:12px;font-weight:600;margin-bottom:1px}
+.firm .fm{font-family:var(--mo);font-size:10px;color:var(--muted);margin-bottom:5px}
+.firm .stack{display:flex;height:9px;overflow:hidden}
+.firm .stack div{height:9px}
+.firm .fk{display:flex;gap:9px;flex-wrap:wrap;margin-top:5px;font-size:10.5px;color:var(--muted)}
+.firm .fk span{display:flex;align-items:center;gap:4px}
+.firm .fk i{width:8px;height:8px;display:block}
+.firm .fnote{font-size:11px;color:var(--muted);line-height:1.55;margin-top:4px}
+
+/* nodes list */
+.nodelist{padding:4px 0 6px;max-height:270px;overflow-y:auto}
+.nl{display:flex;gap:8px;padding:6px 12px;font-size:11.5px;line-height:1.45;
+  border-bottom:1px dotted var(--line)}
+.nl:hover{background:var(--panel2)}
+.nl .g{font-family:var(--mo);font-size:9px;color:var(--muted);letter-spacing:.06em;
+  flex:0 0 30px;padding-top:2px}
+.nl .n{font-weight:600}
+.nl .d{color:var(--muted);font-size:11px}
+
+/* ---------- 全量数据表：不依赖脚本，也是地图的无障碍替代 ----------
+   右栏比地图高得多，把表格放进左栏第二行，正好补上地图下面的空当 */
+.sheet{background:var(--panel);border:1px solid var(--line);grid-column:1;grid-row:2;min-width:0}
+.rail{grid-row:1 / span 2}
+.sheet h2{
+  font-family:var(--mo);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin:0;padding:9px 12px 8px;border-bottom:1px solid var(--line);font-weight:500;
+}
+.sheetscroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:11.5px}
+caption{text-align:left;padding:9px 12px 0;font-size:11.5px;color:var(--muted);line-height:1.6}
+th,td{padding:6px 10px;border-bottom:1px dotted var(--line);text-align:left;vertical-align:top}
+thead th{font-family:var(--mo);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:hover{background:var(--panel2)}
+td.num{font-family:var(--mo);text-align:right;white-space:nowrap}
+td.geo b{font-weight:600}
+td.geo .lat{display:block;font-family:var(--mo);font-size:9px;letter-spacing:.1em;
+  color:var(--muted);text-transform:uppercase}
+td.rl{white-space:nowrap}
+td.rl i{width:9px;height:9px;display:inline-block;margin-right:5px;vertical-align:baseline}
+td.desc{color:var(--muted);line-height:1.55;min-width:19em}
+
+footer{margin-top:22px;border-top:1px solid var(--line);padding-top:11px;
+  font-size:11px;line-height:1.7;color:var(--muted)}
+footer b{color:var(--ink);font-weight:600}
+
+@media (max-width:860px){
+  .grid{grid-template-columns:1fr}
+  .sheet,.rail{grid-column:auto;grid-row:auto}
+  .strip{grid-template-columns:repeat(2,1fr)}
+  .rail{flex-direction:column}
+  .nodelist{max-height:220px}
+  .legright{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- 视图配色：由 build.js 依据同一份色阶生成 ---------- */
+__VIEWCSS__
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="head">
+  <div class="eyebrow"><span>分布图 · 全球市场</span><span>数据截至 2024–2025</span></div>
+  <h1>手办与收藏模型的<em> / </em>世界版图</h1>
+  <p class="sub">这个爱好并不是均匀铺在地球上的。它有一个原型策源地、一条制造带、几块高浓度消费区，和一圈刚刚被拉进来的新市场。切换下面三种读法，看的是同一批地方的三个不同侧面。</p>
+</header>
+
+<div class="strip">
+  <div class="stat"><b>245<span class="u">亿美元</span></b><span>AJA · 2024</span><i>全球动画产业市场 ¥3.84 兆</i></div>
+  <div class="stat"><b>56<span class="u">%</span></b><span>Overseas share</span><i>海外 ¥2.17 兆 &gt; 日本国内 ¥1.67 兆</i></div>
+  <div class="stat"><b>51<span class="u">国</span></b><span>IOEA events</span><i>136 场动漫展分布的国家/地区数</i></div>
+  <div class="stat"><b>43.8<span class="u">%</span></b><span>Pop Mart 2025</span><i>海外收入占比（2024 为 31.8%）</i></div>
+</div>
+
+__RADIOS__
+
+<div class="grid">
+  <div class="mapbox">
+    <div class="tabs">
+__TABS__
+    </div>
+    <div class="scroller">
+    <svg class="map" viewBox="0 0 1000 497.3" role="img" aria-label="全球手办与收藏模型分布图，完整数值见页面下方的数据表">
+      <g id="lands">
+__LANDS__
+      </g>
+      <g id="nodes">
+__NODEMARKS__
+      </g>
+    </svg>
+    </div>
+    <div class="legend">
+__LEGEND__
+    </div>
+  </div>
+
+  <div class="rail">
+    <div class="card">
+      <h2>读数 / Readout</h2>
+      <div id="readout" class="hint">把光标移到地图上的国家或城市标记（手机上点一下）就会显示它的规格；完整数值见页面下方的数据表。</div>
+    </div>
+    <div class="card">
+__BARTITLES__
+      <div class="bars">
+__BARS__
+      </div>
+    </div>
+    <div class="card">
+      <h2>厂商重心 / Centre of gravity</h2>
+      <div class="firms">
+__FIRMS__
+      </div>
+    </div>
+    <div class="card">
+      <h2>关键节点 / Nodes</h2>
+      <div class="nodelist">
+__NODELIST__
+      </div>
+    </div>
+  </div>
+
+  <section class="sheet">
+  <h2>全部数值 / Full sheet</h2>
+  <div class="sheetscroll">
+    <table>
+      <caption>__COUNT__ 个国家与地区，按估算规模从大到小排。规模合计 __TOTAL__ 亿美元，即全文采用的全球基数。</caption>
+      <thead>
+        <tr>
+          <th scope="col">地区</th>
+          <th scope="col">规模（亿美元）</th>
+          <th scope="col">人均（美元）</th>
+          <th scope="col">全球占比</th>
+          <th scope="col">产业角色</th>
+          <th scope="col">说明</th>
+        </tr>
+      </thead>
+      <tbody>
+__ROWS__
+      </tbody>
+    </table>
+  </div>
+  </section>
+</div>
+
+<footer>
+  <b>口径打架，先说清楚</b>　这个品类没有一个各国通用的定义，所以“全球规模”没有可信的单一数字。英文行业报告统计的是 action figures，把北美算成 38–42%、亚太只有 18–27%；亚洲口径的“手办／フィギュア”把景品、扭蛋、盲盒、GK、拼装都算进来，于是亚太变成约 58%。各家给出的全球总额从 85 亿到 167 亿美元不等。<b>图上采用亚洲口径（广义角色模型）</b>，全球基数取 140 亿美元。<br>
+  <b>一手来源</b>　AJA《アニメ産業レポート 2025》（2024 年数据）：全球动画产业市场 ¥3.84 兆（约 245 亿美元），海外 ¥2.17 兆／56%，国内 ¥1.67 兆／44%，海外同比 +26%；制作侧 ¥4,662 亿。IOEA 收录 136 场动漫活动，覆盖 51 个国家与地区（2023 年为 123 场／46 国）。Bandai Namco IR：玩具·爱好事业 FY2026 净销售额 ¥6,739 亿（约 42.6 亿美元），为集团第一大板块，Gundam 单 IP ¥2,543 亿；管理层目标海外占比 50%。Funko Form 10-K：美国以外销售占 2024 年净销售额约 35%。POP MART 2025 年报（HKEX）：营收 RMB 371.2 亿，海外 162.7 亿／43.8%，其中亚太 80.1 亿、美洲 68.1 亿、欧洲及其他 14.5 亿。日本玩具协会／JACTA：2024 年扭蛋出货规模 ¥1,410 亿，同比 +22.6%。<br>
+  <b>国别数值是估算</b>　没有任何机构按国家公布这个品类的销售额。图上的国别数字是我按上述区域比例、人口和该国动漫零售活跃度拆出来的<b>量级估算</b>，用于比较相对位置，不能当统计数据引用。「人均」= 该国估算规模 ÷ 总人口，不是玩家人均消费。<br>
+  <b>投影</b>　Miller 圆柱投影，南纬 58° 以南裁去。底图 Natural Earth（world-atlas 110m），已做 Douglas–Peucker 简化。
+</footer>
+
+</div>
+
+<script>
+/*
+ * 页面所有内容都已经是静态 HTML：换视图、图例、排行、筛选都靠单选框 + CSS，
+ * 关掉 JavaScript 也能用。下面这段只做一件增强：把光标指到的地方写进右上角读数。
+ */
+try{
+const DATA = __DATA_JSON__;
+const NODES = __NODES_JSON__;
+const ROLE = __ROLE_JSON__;
+const NODEKIND = __NODEKIND_JSON__;
+const TOTAL = __TOTAL__;
+
+const readout = document.getElementById("readout");
+const svg = document.querySelector("svg.map");
+const paths = {};
+svg.querySelectorAll("[data-name]").forEach(el => { paths[el.dataset.name] = el; });
+const barRows = [...document.querySelectorAll(".bar")];
+let locked = false;
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+
+function showCountry(name){
+  const d = DATA[name];
+  if(!d){
+    readout.className = "hint";
+    readout.innerHTML = `<b style="font-family:var(--dp);font-size:20px">${esc(name)}</b><br>暂无该地区的独立估算。`;
+    return;
+  }
+  readout.className = "readout";
+  readout.innerHTML = `
+    <div class="rname">${esc(d.zh)}</div>
+    <div class="rlatin">${esc(name)}</div>
+    <div class="row"><span>市场规模</span><b>${d.m.toFixed(2)} 亿美元</b></div>
+    <div class="row"><span>人均年消费</span><b>${d.pc.toFixed(2)} 美元</b></div>
+    <div class="row"><span>全球占比</span><b>${(d.m / TOTAL * 100).toFixed(1)}%</b></div>
+    <div class="row"><span>产业角色</span><b style="color:${ROLE[d.role].c}">${esc(ROLE[d.role].label)}</b></div>
+    ${d.note ? `<div class="note">${esc(d.note)}</div>` : ""}`;
+}
+function showNode(n){
+  readout.className = "readout";
+  readout.innerHTML = `
+    <div class="rname">${esc(n.zh)}</div>
+    <div class="rlatin">${esc(n.en)} · ${Math.abs(n.lat).toFixed(1)}°${n.lat < 0 ? "S" : "N"} ${Math.abs(n.lon).toFixed(1)}°${n.lon < 0 ? "W" : "E"}</div>
+    <div class="row"><span>节点类型</span><b>${esc(NODEKIND[n.kind].label)}</b></div>
+    <div class="note">${esc(n.d)}</div>`;
+}
+function resetReadout(){
+  readout.className = "hint";
+  readout.textContent = "把光标移到地图上的国家或城市标记（手机上点一下）就会显示它的规格；完整数值见页面下方的数据表。";
+}
+function highlight(name){
+  for(const k in paths) paths[k].classList.toggle("hot", k === name);
+  barRows.forEach(r => r.classList.toggle("act", r.dataset.n === name));
+}
+
+function hit(t){
+  if(!t || !t.dataset) return null;
+  if(t.dataset.node !== undefined) return {node: NODES[+t.dataset.node]};
+  if(t.dataset.name) return {name: t.dataset.name};
+  return null;
+}
+svg.addEventListener("mouseover", e => {
+  const h = hit(e.target);
+  if(!h || locked) return;
+  if(h.node){ showNode(h.node); highlight(null); }
+  else { showCountry(h.name); highlight(h.name); }
+});
+svg.addEventListener("mouseleave", () => { if(!locked){ resetReadout(); highlight(null); } });
+svg.addEventListener("click", e => {
+  const h = hit(e.target);
+  if(h && h.node){ showNode(h.node); highlight(null); locked = true; }
+  else if(h){ showCountry(h.name); highlight(h.name); locked = true; }
+  else { locked = false; resetReadout(); highlight(null); }
+});
+
+/* 排行条和节点列表同样可以驱动读数 */
+barRows.forEach(r => r.addEventListener("mouseenter", () => {
+  if(locked) return;
+  showCountry(r.dataset.n); highlight(r.dataset.n);
+}));
+document.querySelectorAll(".nl").forEach(el => el.addEventListener("mouseenter", () => {
+  if(!locked) showNode(NODES[+el.dataset.i]);
+}));
+document.querySelectorAll("tbody tr[data-n]").forEach(tr => tr.addEventListener("mouseenter", () => {
+  if(!locked){ showCountry(tr.dataset.n); highlight(tr.dataset.n); }
+}));
+}catch(err){
+  console.error(err);
+}
+</script>
+</body>
+</html>

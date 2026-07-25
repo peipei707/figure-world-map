@@ -1,0 +1,380 @@
+{
+ "Japan": {
+  "zh": "日本",
+  "m": 33.1,
+  "pc": 26.91,
+  "role": "ip",
+  "note": "原型师、涂装师与版权当日贩售制度的发源地。GK 文化从大阪起步，量产完成品与高端收藏线也在这里定标准。"
+ },
+ "China": {
+  "zh": "中国大陆",
+  "m": 30.74,
+  "pc": 2.18,
+  "role": "mfg",
+  "note": "同时是全球最大代工基地和增长最快的消费市场之一。市场规模从 2020 年约 37 亿元升至 2024 年约 111 亿元，2026 年预计 162 亿元。"
+ },
+ "United States of America": {
+  "zh": "美国",
+  "m": 31.92,
+  "pc": 9.39,
+  "role": "core",
+  "note": "影视与美系 IP 主导，Funko、孩之宝的主场；近两年被中国潮玩强力切入。"
+ },
+ "South Korea": {
+  "zh": "韩国",
+  "m": 5.32,
+  "pc": 10.29,
+  "role": "core",
+  "note": "高人均、强线上二手流通，游戏 IP 衍生占比高。"
+ },
+ "Taiwan": {
+  "zh": "中国台湾",
+  "m": 2.36,
+  "pc": 10.09,
+  "role": "core",
+  "note": "原型师与代工设计人才密度高，是日系与陆系之间的中转层。"
+ },
+ "Hong Kong": {
+  "zh": "中国香港",
+  "m": 1.42,
+  "pc": 18.93,
+  "role": "core",
+  "note": "Hot Toys 所在地，1/6 真人比例收藏品的全球高地。"
+ },
+ "Singapore": {
+  "zh": "新加坡",
+  "m": 1.06,
+  "pc": 17.67,
+  "role": "core",
+  "note": "东南亚最高人均，区域首发与展会中转站。"
+ },
+ "Thailand": {
+  "zh": "泰国",
+  "m": 2.96,
+  "pc": 4.12,
+  "role": "emerging",
+  "note": "东南亚零售枢纽，毛绒与盲盒品类渗透极快。"
+ },
+ "Malaysia": {
+  "zh": "马来西亚",
+  "m": 1.18,
+  "pc": 3.42,
+  "role": "emerging",
+  "note": "华语圈消费习惯外溢，线上渠道为主。"
+ },
+ "Vietnam": {
+  "zh": "越南",
+  "m": 1.42,
+  "pc": 1.41,
+  "role": "mfg",
+  "note": "承接中国转出的部分玩具产能，本地消费同步起步。"
+ },
+ "Indonesia": {
+  "zh": "印度尼西亚",
+  "m": 1.77,
+  "pc": 0.63,
+  "role": "emerging",
+  "note": "人口红利大，客单价低，增长靠门店密度铺开。"
+ },
+ "Philippines": {
+  "zh": "菲律宾",
+  "m": 1.18,
+  "pc": 1.03,
+  "role": "emerging",
+  "note": "美系 IP 认知度高，二手与代购活跃。"
+ },
+ "India": {
+  "zh": "印度",
+  "m": 0.71,
+  "pc": 0.05,
+  "role": "emerging",
+  "note": "基数极低，动漫消费刚起步。"
+ },
+ "France": {
+  "zh": "法国",
+  "m": 2.6,
+  "pc": 3.8,
+  "role": "core",
+  "note": "欧洲最强的日系动漫土壤，Japan Expo 是欧陆最大出口。"
+ },
+ "Germany": {
+  "zh": "德国",
+  "m": 2.36,
+  "pc": 2.79,
+  "role": "core",
+  "note": "模型／拼装传统深厚，收藏级需求稳定。"
+ },
+ "United Kingdom": {
+  "zh": "英国",
+  "m": 2.13,
+  "pc": 3.09,
+  "role": "core",
+  "note": "影视衍生与零售连锁成熟。"
+ },
+ "Italy": {
+  "zh": "意大利",
+  "m": 1.42,
+  "pc": 2.41,
+  "role": "core",
+  "note": "Lucca 展会带动，动漫受众基数大。"
+ },
+ "Spain": {
+  "zh": "西班牙",
+  "m": 1.18,
+  "pc": 2.44,
+  "role": "core",
+  "note": ""
+ },
+ "Netherlands": {
+  "zh": "荷兰",
+  "m": 0.71,
+  "pc": 3.92,
+  "role": "core",
+  "note": ""
+ },
+ "Belgium": {
+  "zh": "比利时",
+  "m": 0.33,
+  "pc": 2.8,
+  "role": "core",
+  "note": ""
+ },
+ "Switzerland": {
+  "zh": "瑞士",
+  "m": 0.28,
+  "pc": 3.15,
+  "role": "core",
+  "note": ""
+ },
+ "Austria": {
+  "zh": "奥地利",
+  "m": 0.24,
+  "pc": 2.61,
+  "role": "core",
+  "note": ""
+ },
+ "Sweden": {
+  "zh": "瑞典",
+  "m": 0.33,
+  "pc": 3.11,
+  "role": "core",
+  "note": ""
+ },
+ "Norway": {
+  "zh": "挪威",
+  "m": 0.17,
+  "pc": 3.04,
+  "role": "core",
+  "note": ""
+ },
+ "Denmark": {
+  "zh": "丹麦",
+  "m": 0.19,
+  "pc": 3.17,
+  "role": "core",
+  "note": ""
+ },
+ "Finland": {
+  "zh": "芬兰",
+  "m": 0.14,
+  "pc": 2.5,
+  "role": "core",
+  "note": ""
+ },
+ "Ireland": {
+  "zh": "爱尔兰",
+  "m": 0.14,
+  "pc": 2.64,
+  "role": "core",
+  "note": ""
+ },
+ "Poland": {
+  "zh": "波兰",
+  "m": 0.53,
+  "pc": 1.41,
+  "role": "emerging",
+  "note": "中东欧增长最快的市场。"
+ },
+ "Czechia": {
+  "zh": "捷克",
+  "m": 0.17,
+  "pc": 1.56,
+  "role": "emerging",
+  "note": ""
+ },
+ "Portugal": {
+  "zh": "葡萄牙",
+  "m": 0.17,
+  "pc": 1.6,
+  "role": "emerging",
+  "note": ""
+ },
+ "Greece": {
+  "zh": "希腊",
+  "m": 0.12,
+  "pc": 1.15,
+  "role": "emerging",
+  "note": ""
+ },
+ "Romania": {
+  "zh": "罗马尼亚",
+  "m": 0.14,
+  "pc": 0.74,
+  "role": "emerging",
+  "note": ""
+ },
+ "Hungary": {
+  "zh": "匈牙利",
+  "m": 0.11,
+  "pc": 1.15,
+  "role": "emerging",
+  "note": ""
+ },
+ "Russia": {
+  "zh": "俄罗斯",
+  "m": 0.83,
+  "pc": 0.58,
+  "role": "emerging",
+  "note": "官方渠道受限，灰色进口与本土翻版占比高。"
+ },
+ "Ukraine": {
+  "zh": "乌克兰",
+  "m": 0.07,
+  "pc": 0.19,
+  "role": "emerging",
+  "note": ""
+ },
+ "Turkey": {
+  "zh": "土耳其",
+  "m": 0.5,
+  "pc": 0.58,
+  "role": "emerging",
+  "note": ""
+ },
+ "Canada": {
+  "zh": "加拿大",
+  "m": 1.77,
+  "pc": 4.32,
+  "role": "core",
+  "note": ""
+ },
+ "Mexico": {
+  "zh": "墨西哥",
+  "m": 1.77,
+  "pc": 1.36,
+  "role": "emerging",
+  "note": "拉美第一大市场，动漫受众极其忠诚。"
+ },
+ "Brazil": {
+  "zh": "巴西",
+  "m": 1.54,
+  "pc": 0.72,
+  "role": "emerging",
+  "note": "CCXP 是南半球最大的流行文化展。"
+ },
+ "Argentina": {
+  "zh": "阿根廷",
+  "m": 0.5,
+  "pc": 1.09,
+  "role": "emerging",
+  "note": ""
+ },
+ "Chile": {
+  "zh": "智利",
+  "m": 0.35,
+  "pc": 1.79,
+  "role": "emerging",
+  "note": ""
+ },
+ "Colombia": {
+  "zh": "哥伦比亚",
+  "m": 0.3,
+  "pc": 0.58,
+  "role": "emerging",
+  "note": ""
+ },
+ "Peru": {
+  "zh": "秘鲁",
+  "m": 0.15,
+  "pc": 0.44,
+  "role": "emerging",
+  "note": ""
+ },
+ "Australia": {
+  "zh": "澳大利亚",
+  "m": 1.18,
+  "pc": 4.37,
+  "role": "core",
+  "note": ""
+ },
+ "New Zealand": {
+  "zh": "新西兰",
+  "m": 0.21,
+  "pc": 4.04,
+  "role": "core",
+  "note": ""
+ },
+ "Saudi Arabia": {
+  "zh": "沙特阿拉伯",
+  "m": 0.65,
+  "pc": 1.97,
+  "role": "emerging",
+  "note": "政策转向后动漫与游戏消费投入激增。"
+ },
+ "United Arab Emirates": {
+  "zh": "阿联酋",
+  "m": 0.59,
+  "pc": 5.62,
+  "role": "emerging",
+  "note": "中东最高人均，旅游零售拉动明显。"
+ },
+ "Qatar": {
+  "zh": "卡塔尔",
+  "m": 0.14,
+  "pc": 4.67,
+  "role": "emerging",
+  "note": ""
+ },
+ "Kuwait": {
+  "zh": "科威特",
+  "m": 0.11,
+  "pc": 2.24,
+  "role": "emerging",
+  "note": ""
+ },
+ "Israel": {
+  "zh": "以色列",
+  "m": 0.26,
+  "pc": 2.63,
+  "role": "core",
+  "note": ""
+ },
+ "Egypt": {
+  "zh": "埃及",
+  "m": 0.17,
+  "pc": 0.15,
+  "role": "emerging",
+  "note": ""
+ },
+ "Morocco": {
+  "zh": "摩洛哥",
+  "m": 0.06,
+  "pc": 0.16,
+  "role": "emerging",
+  "note": ""
+ },
+ "South Africa": {
+  "zh": "南非",
+  "m": 0.19,
+  "pc": 0.3,
+  "role": "emerging",
+  "note": ""
+ },
+ "Nigeria": {
+  "zh": "尼日利亚",
+  "m": 0.07,
+  "pc": 0.03,
+  "role": "emerging",
+  "note": ""
+ }
+}
