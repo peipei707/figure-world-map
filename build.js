@@ -55,6 +55,92 @@ const esc = s => String(s)
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
   .replace(/"/g, "&quot;");
 
+/* ---------- 沿 180° 经线切开跨越东西经的国家 ----------
+ *
+ * 底图烘成平面坐标时没有在反经线上裁断，于是俄罗斯（楚科奇半岛）和斐济这类
+ * 横跨 180° 的多边形里，同一个环既有 x≈1000 的点又有 x≈0 的点。直接画出来，
+ * 那条本该绕到地图另一侧的边会被拉成一条贯穿全图的横带。
+ *
+ * 这里把每个环拆成绝对坐标点列，凡是相邻两点的横向跳跃超过半幅图，就认定它
+ * 跨了反经线：在图幅边缘补一个插值点收尾，另一侧从对应边缘重新起笔。
+ */
+const W = 1000;             // 图幅宽度，即整整 360° 经度
+const WRAP = W / 2;         // 跳跃超过半幅图就认为是绕过了反经线
+
+function parseSubpath(sub) {
+  const nums = sub.match(/-?\d+(?:\.\d+)?/g).map(Number);
+  const pts = [[nums[0], nums[1]]];
+  for (let i = 2; i < nums.length; i += 2) {
+    const [px, py] = pts[pts.length - 1];
+    pts.push([px + nums[i], py + nums[i + 1]]);
+  }
+  return pts;
+}
+
+/* 一段跨了反经线时，算出它在图幅边缘的进出点：两者纵坐标相同，
+   出点贴着离开的那条边，进点贴着另一条边 */
+function edgePair([x0, y0], [x1, y1]) {
+  const east = x1 < x0;                       // 从右边缘出去，左边缘进来
+  const out = east ? W : 0, into = east ? 0 : W;
+  const dx = east ? x1 + W - x0 : x1 - W - x0;
+  const t = dx === 0 ? 0 : (out - x0) / dx;   // 点正好落在边上时不用插值
+  const yc = y0 + t * (y1 - y0);
+  return [[out, yc], [into, yc]];
+}
+
+function cutRing(pts) {
+  /* 环是闭合的，路径里显式回到起点的那个重复点先去掉 */
+  const last = pts[pts.length - 1];
+  if (pts.length > 1 && last[0] === pts[0][0] && last[1] === pts[0][1]) pts.pop();
+
+  const n = pts.length;
+  const crosses = i => Math.abs(pts[(i + 1) % n][0] - pts[i][0]) > WRAP;
+  const first = [...Array(n).keys()].find(crosses);
+  if (first === undefined) return [pts];
+
+  /* 从第一个跨越之后起笔，这样绕一圈回来时最后一段正好是那次跨越，
+     不会出现「首尾两段其实是同一块陆地」却被拆开的情况 */
+  const start = (first + 1) % n;
+  const runs = [];
+  let run = [edgePair(pts[first], pts[start])[1]];
+  for (let k = 0; k < n; k++) {
+    const i = (start + k) % n, j = (start + k + 1) % n;
+    run.push(pts[i]);
+    if (Math.abs(pts[j][0] - pts[i][0]) > WRAP) {
+      const [out, into] = edgePair(pts[i], pts[j]);
+      run.push(out);
+      runs.push(run);
+      run = [into];
+    }
+  }
+  /* 循环最后一步已经收尾并另起了一笔，那一笔和开头重复，丢掉 */
+  return runs.filter(r => {
+    if (r.length < 3) return false;
+    const xs = r.map(p => p[0]), ys = r.map(p => p[1]);
+    /* 切出来的零宽零高碎片不画 */
+    return Math.max(...xs) - Math.min(...xs) > 0.05 && Math.max(...ys) - Math.min(...ys) > 0.05;
+  });
+}
+
+/* 点列写回紧凑的相对坐标 path，和原始数据同一种写法 */
+function serialize(pts) {
+  const r = n => Math.round(n * 10) / 10;
+  let [px, py] = pts[0];
+  let d = `M${r(px)} ${r(py)}l`;
+  const segs = [];
+  for (let i = 1; i < pts.length; i++) {
+    segs.push(`${r(pts[i][0] - px)} ${r(pts[i][1] - py)}`);
+    [px, py] = pts[i];
+  }
+  return d + segs.join(",") + "z";
+}
+
+function cutAtAntimeridian(d) {
+  return d.split("M").filter(Boolean)
+    .flatMap(sub => cutRing(parseSubpath("M" + sub)))
+    .map(serialize).join("");
+}
+
 /* 值落在第几档 */
 const band = (v, breaks) => { let i = 0; while (i < breaks.length && v >= breaks[i]) i++; return i; };
 
@@ -126,8 +212,16 @@ const tabs = VIEWS.map(v =>
 
 /* ---------- 地图：陆地 ---------- */
 const lands = [
-  ...Object.entries(WORLD).map(([name, d]) =>
-    `        <path class="c${bandClasses(name)}" d="${d}" data-name="${esc(name)}"><title>${titleFor(name)}</title></path>`),
+  ...Object.entries(WORLD).map(([name, d]) => {
+    const cut = cutAtAntimeridian(d);
+    /* 切完之后不该再有横跨半幅图的环，有就是切漏了 */
+    for (const sub of cut.split("M").filter(Boolean)) {
+      const xs = parseSubpath("M" + sub).map(p => p[0]);
+      const span = Math.max(...xs) - Math.min(...xs);
+      if (span > WRAP) throw new Error(`${name} 仍有横跨 ${span.toFixed(0)}px 的路径，反经线没切干净`);
+    }
+    return `        <path class="c${bandClasses(name)}" d="${cut}" data-name="${esc(name)}"><title>${titleFor(name)}</title></path>`;
+  }),
   ...MICRO.map(([name, lon, lat]) => {
     const [x, y] = P(lon, lat);
     return `        <rect class="c${bandClasses(name)}" x="${(x - 2.4).toFixed(2)}" y="${(y - 2.4).toFixed(2)}"` +
