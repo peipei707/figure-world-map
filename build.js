@@ -18,12 +18,26 @@ const WORLD = read("world.json");     // 国名 -> SVG path，Miller 投影下�
 const DATA = read("countries.json");  // 国名 -> {zh, m, pc, role, note}
 const NODES = read("nodes.json");     // 城市节点
 const FIRMS = read("firms.json");     // 厂商收入构成
+const COST = read("cost-model.json"); // 零售价拆解模型：价格水平、税、关税、渠道加价
 
 /* ---------- 配色与分级：全站唯一一份，CSS 和 JS 都从这里派生 ---------- */
 const RAMP_M = ["#3A424C", "#255A72", "#1E7C99", "#2FA6BC", "#6FD8CF"];
 const RAMP_PC = ["#413F3A", "#6E5330", "#A6762C", "#D9A230", "#F3D45F"];
+const RAMP_N = ["#3A404C", "#3F4E7E", "#5361A8", "#7A7ECB", "#AEA9EE"];
+const RAMP_G = ["#39443E", "#2C6350", "#2A8763", "#46B078", "#84DFA4"];
 const M_BREAKS = [0.3, 1.0, 3.0, 12];   // 亿美元
 const PC_BREAKS = [1.0, 2.5, 5.0, 12];  // 美元 / 人
+const N_BREAKS = [0.3, 1.0, 3.0, 12];   // 等量亿美元（以中国零售价计）
+const G_BREAKS = [0.05, 0.2, 0.6, 2.5]; // 毛利池，亿美元
+
+/* 零售价拆解出来的五段，颜色从厂端到税一路变冷 */
+const SLICES = [
+  { k: "F",    c: "#6FD8CF", label: "厂端结算" },
+  { k: "duty", c: "#E2445C", label: "关税" },
+  { k: "frt",  c: "#E8A33D", label: "头程物流" },
+  { k: "chan", c: "#5E6675", label: "渠道加价" },
+  { k: "tax",  c: "#3B424C", label: "当地税" },
+];
 const ROLE = {
   ip:       { c: "#E2445C", label: "IP・原型策源" },
   mfg:      { c: "#E8A33D", label: "制造中枢" },
@@ -34,10 +48,13 @@ const NODEKIND = {
   expo: { label: "展会" }, factory: { label: "制造" },
   hq: { label: "总部" }, hub: { label: "零售集散" },
 };
+/* bars 指这个视图配哪一份排行榜——产业分工沿用规模排名 */
 const VIEWS = [
-  { id: "m", k: "01 / VOLUME", label: "市场总量" },
-  { id: "pc", k: "02 / DENSITY", label: "人均浓度" },
-  { id: "role", k: "03 / ROLE", label: "产业分工" },
+  { id: "m", k: "01 / VOLUME", label: "市场总量", bars: "m" },
+  { id: "pc", k: "02 / DENSITY", label: "人均浓度", bars: "pc" },
+  { id: "role", k: "03 / ROLE", label: "产业分工", bars: "m" },
+  { id: "n", k: "04 / UNITS", label: "价格校正", bars: "n" },
+  { id: "g", k: "05 / MARGIN", label: "毛利池", bars: "g" },
 ];
 /* 110m 底图上小到看不见、但有数据的地方，画成方块 */
 const MICRO = [["Hong Kong", 114.17, 22.32], ["Singapore", 103.82, 1.35]];
@@ -147,16 +164,64 @@ const band = (v, breaks) => { let i = 0; while (i < breaks.length && v >= breaks
 const entries = Object.entries(DATA);
 const TOTAL = entries.reduce((a, [, d]) => a + d.m, 0);
 
-/* 每个国家身上挂三套配色的档位类，视图切换时由 CSS 决定用哪一套 */
+/* ---------- 零售价拆解：从销售额推到「买走多少件」和「厂端赚到多少」 ----------
+ *
+ * 含税零售价  P = 出厂价 F × (1 + 关税 d + 头程 f) × 渠道倍数 M × (1 + 税 vat)
+ *
+ * 各市场的 P 是观测值（以中国大陆同款零售价为 1），反解出来的 F 就是同一件东西
+ * 卖到当地时厂端实际结算到的钱。制造成本 C 与卖到哪里无关——东西都出自同一批
+ * 工厂——所以单件毛利 = F − C，乘以等量件数就是这个市场的毛利池。
+ *
+ * 销售额大不等于赚得多：高价市场的价差有很大一块被当地税和渠道吃掉，
+ * 低价市场则是件数多、单件薄。这一层就是把这两件事分开看。
+ */
+const C = COST.cost;
+const CLUSTER = {};                       // 国名 -> 分组
+for (const [key, cl] of Object.entries(COST.clusters))
+  for (const name of cl.members) {
+    if (!DATA[name]) throw new Error(`成本模型里的 ${name} 不在国别数据里`);
+    CLUSTER[name] = key;
+  }
+
+const CL = {};                            // 分组 -> 派生量
+for (const [key, cl] of Object.entries(COST.clusters)) {
+  const { P, vat, d, f, M } = cl;
+  const s = 1 / ((1 + d + f) * M * (1 + vat));   // 厂端结算占零售价的比例
+  const F = s * P;                                // 单件厂端结算，以中国零售价为 1
+  const slice = {
+    F: s, duty: s * d, frt: s * f,
+    chan: s * (1 + d + f) * (M - 1),
+    tax: vat / (1 + vat),
+  };
+  const sum = Object.values(slice).reduce((a, b) => a + b, 0);
+  if (Math.abs(sum - 1) > 1e-9) throw new Error(`${key} 的零售价拆解加起来是 ${sum}，不是 1`);
+  CL[key] = { ...cl, key, s, F, unit: F - C, slice };
+}
+
+const MODEL = {};                         // 国名 -> {分组, 等量销售额, 毛利池}
+for (const [name, d] of entries) {
+  const cl = CL[CLUSTER[name]];
+  if (!cl) throw new Error(`${name} 没有归进任何成本模型分组`);
+  const n = d.m / cl.P;                   // 按中国零售价重新计价的等量销售额
+  MODEL[name] = { cl, n, g: n * cl.unit };
+}
+const TOTAL_N = entries.reduce((a, [name]) => a + MODEL[name].n, 0);
+const TOTAL_G = entries.reduce((a, [name]) => a + MODEL[name].g, 0);
+
+/* 每个国家身上挂全部五套配色的档位类，视图切换时由 CSS 决定用哪一套 */
 function bandClasses(name) {
   const d = DATA[name];
   if (!d) return "";
-  return ` b-m-${band(d.m, M_BREAKS)} b-pc-${band(d.pc, PC_BREAKS)} r-${d.role}`;
+  const m = MODEL[name];
+  return ` b-m-${band(d.m, M_BREAKS)} b-pc-${band(d.pc, PC_BREAKS)} r-${d.role}` +
+    ` b-n-${band(m.n, N_BREAKS)} b-g-${band(m.g, G_BREAKS)}`;
 }
 function titleFor(name) {
   const d = DATA[name];
   if (!d) return `${esc(name)} · 暂无估算`;
-  return `${esc(d.zh)} · ${esc(name)} · ${d.m.toFixed(2)} 亿美元 · 人均 ${d.pc.toFixed(2)} 美元`;
+  const m = MODEL[name];
+  return `${esc(d.zh)} · ${esc(name)} · ${d.m.toFixed(2)} 亿美元 · 人均 ${d.pc.toFixed(2)} 美元` +
+    ` · 等量 ${m.n.toFixed(2)} · 毛利池 ${m.g.toFixed(2)}`;
 }
 
 /* ---------- 视图配色 CSS ---------- */
@@ -166,6 +231,8 @@ function viewCss() {
 
   RAMP_M.forEach((c, i) => out.push(paint(`#v-m:checked ~ .grid .b-m-${i}`, c)));
   RAMP_PC.forEach((c, i) => out.push(paint(`#v-pc:checked ~ .grid .b-pc-${i}`, c)));
+  RAMP_N.forEach((c, i) => out.push(paint(`#v-n:checked ~ .grid .b-n-${i}`, c)));
+  RAMP_G.forEach((c, i) => out.push(paint(`#v-g:checked ~ .grid .b-g-${i}`, c)));
   Object.entries(ROLE).forEach(([k, v]) => out.push(paint(`#v-role:checked ~ .grid .r-${k}`, v.c)));
 
   /* 选中的标签页 */
@@ -178,8 +245,8 @@ function viewCss() {
   VIEWS.forEach(v => {
     out.push(`#v-${v.id}:checked ~ .grid .leg-${v.id}{display:block}`);
   });
-  out.push(`#v-m:checked ~ .grid .barset-m,\n#v-role:checked ~ .grid .barset-m,\n#v-pc:checked ~ .grid .barset-pc{display:block}`);
-  out.push(`#v-m:checked ~ .grid .btitle-m,\n#v-role:checked ~ .grid .btitle-m,\n#v-pc:checked ~ .grid .btitle-pc{display:block}`);
+  out.push(VIEWS.map(v => `#v-${v.id}:checked ~ .grid .barset-${v.bars}`).join(",\n") + "{display:block}");
+  out.push(VIEWS.map(v => `#v-${v.id}:checked ~ .grid .btitle-${v.bars}`).join(",\n") + "{display:block}");
 
   /* 角色筛选：只在产业分工视图里生效，被排除的地区压暗 */
   Object.keys(ROLE).forEach(k => {
@@ -285,25 +352,45 @@ const marksLegend = `      <div class="legright">
 const legend = [
   rampLegend("m", "市场规模", "亿美元", RAMP_M, M_BREAKS),
   rampLegend("pc", "人均年消费", "美元 / 人", RAMP_PC, PC_BREAKS),
+  rampLegend("n", "等量销售额 · 按中国零售价重新计价", "亿美元", RAMP_N, N_BREAKS),
+  rampLegend("g", "厂端毛利池 · 扣完税费渠道与制造成本", "亿美元", RAMP_G, G_BREAKS),
   roleLegend,
   marksLegend,
 ].join("\n");
 
-/* ---------- 排行榜：两个视图各一份，产业分工视图沿用规模排名 ---------- */
-function barset(id, key, unit) {
-  const list = [...entries].sort((a, b) => b[1][key] - a[1][key]).slice(0, 10);
-  const max = list[0][1][key];
+/* ---------- 排行榜：每份口径各一榜，产业分工视图沿用规模排名 ---------- */
+const METRIC = {
+  m:  { of: name => DATA[name].m,     dp: 1, unit: "规模", title: "规模排名 / Top 10 by volume" },
+  pc: { of: name => DATA[name].pc,    dp: 1, unit: "人均", title: "人均排名 / Top 10 by density" },
+  n:  { of: name => MODEL[name].n,    dp: 1, unit: "等量", title: "等量排名 / Top 10 by units" },
+  g:  { of: name => MODEL[name].g,    dp: 2, unit: "毛利池", title: "毛利池排名 / Top 10 by margin" },
+};
+function barset(id) {
+  const { of, dp, unit } = METRIC[id];
+  const list = [...entries].sort((a, b) => of(b[0]) - of(a[0])).slice(0, 10);
+  const max = of(list[0][0]);
   const rows = list.map(([name, d]) =>
     `        <div class="bar" data-n="${esc(name)}">
-          <div class="t"><span>${esc(d.zh)}</span><b>${d[key].toFixed(1)}</b></div>
-          <div class="tr"><div class="fl b-m-${band(d.m, M_BREAKS)} b-pc-${band(d.pc, PC_BREAKS)} r-${d.role}" style="width:${(d[key] / max * 100).toFixed(1)}%"></div></div>
+          <div class="t"><span>${esc(d.zh)}</span><b>${of(name).toFixed(dp)}</b></div>
+          <div class="tr"><div class="fl${bandClasses(name)}" style="width:${(of(name) / max * 100).toFixed(1)}%"></div></div>
         </div>`).join("\n");
   return `      <div class="barset barset-${id}" aria-label="按${unit}排名前十">\n${rows}\n      </div>`;
 }
-const bars = [barset("m", "m", "规模"), barset("pc", "pc", "人均")].join("\n");
-const barTitles =
-  `      <h2 class="btitle btitle-m">规模排名 / Top 10 by volume</h2>\n` +
-  `      <h2 class="btitle btitle-pc">人均排名 / Top 10 by density</h2>`;
+const barKeys = [...new Set(VIEWS.map(v => v.bars))];
+const bars = barKeys.map(barset).join("\n");
+const barTitles = barKeys.map(k =>
+  `      <h2 class="btitle btitle-${k}">${esc(METRIC[k].title)}</h2>`).join("\n");
+
+/* ---------- 价格拆解：每个分组的零售价怎么分掉的 ---------- */
+const breakdown = Object.values(CL).map(cl => `        <div class="firm">
+          <div class="fn">${esc(cl.zh)}<span class="pmul">零售价 ×${cl.P.toFixed(2)}</span></div>
+          <div class="fm">厂端结算 ${(cl.s * 100).toFixed(0)}% · 单件到手 ${cl.F.toFixed(2)} · 单件毛利 ${cl.unit.toFixed(2)}</div>
+          <div class="stack">${SLICES.map(s =>
+            `<div style="width:${(cl.slice[s.k] * 100).toFixed(1)}%;background:${s.c}" title="${esc(s.label)} ${(cl.slice[s.k] * 100).toFixed(1)}%"></div>`).join("")}</div>
+          <div class="fk">${SLICES.filter(s => cl.slice[s.k] > 0.005).map(s =>
+            `<span><i style="background:${s.c}"></i>${esc(s.label)} ${(cl.slice[s.k] * 100).toFixed(0)}%</span>`).join("")}</div>${cl.note ? `
+          <div class="fnote">${esc(cl.note)}</div>` : ""}
+        </div>`).join("\n");
 
 /* ---------- 厂商 ---------- */
 const firms = FIRMS.map(f => `        <div class="firm">
@@ -320,14 +407,33 @@ const nodeList = NODES.map((n, i) =>
         <div><div class="n">${esc(n.zh)}</div><div class="d">${esc(n.d)}</div></div></div>`).join("\n");
 
 /* ---------- 全量数据表 ---------- */
-const rows = [...entries].sort((a, b) => b[1].m - a[1].m).map(([name, d]) =>
-  `        <tr data-n="${esc(name)}">
+const rows = [...entries].sort((a, b) => b[1].m - a[1].m).map(([name, d]) => {
+  const m = MODEL[name];
+  return `        <tr data-n="${esc(name)}">
           <td class="geo"><b>${esc(d.zh)}</b><span class="lat">${esc(name)}</span></td>
           <td class="num">${d.m.toFixed(2)}</td>
           <td class="num">${d.pc.toFixed(2)}</td>
-          <td class="num">${(d.m / TOTAL * 100).toFixed(1)}%</td>
+          <td class="num">${m.cl.P.toFixed(2)}</td>
+          <td class="num">${m.n.toFixed(2)}</td>
+          <td class="num">${m.g.toFixed(2)}</td>
+          <td class="num">${(m.g / TOTAL_G * 100).toFixed(1)}%</td>
           <td class="rl"><i style="background:${ROLE[d.role].c}"></i>${esc(ROLE[d.role].label)}</td>
           <td class="desc">${d.note ? esc(d.note) : "—"}</td>
+        </tr>`;
+}).join("\n");
+
+/* 模型参数摊开，愿意的话可以逐个跟我吵 */
+const paramRows = Object.values(CL).map(cl =>
+  `        <tr>
+          <td class="geo"><b>${esc(cl.zh)}</b></td>
+          <td class="num">${cl.P.toFixed(2)}</td>
+          <td class="num">${(cl.vat * 100).toFixed(0)}%</td>
+          <td class="num">${(cl.d * 100).toFixed(0)}%</td>
+          <td class="num">${(cl.f * 100).toFixed(0)}%</td>
+          <td class="num">${cl.M.toFixed(2)}</td>
+          <td class="num">${(cl.s * 100).toFixed(1)}%</td>
+          <td class="num">${cl.F.toFixed(3)}</td>
+          <td class="num">${cl.unit.toFixed(3)}</td>
         </tr>`).join("\n");
 
 /* ---------- 填模板 ---------- */
@@ -341,10 +447,22 @@ const fills = {
   __BARTITLES__: barTitles,
   __BARS__: bars,
   __FIRMS__: firms,
+  __BREAKDOWN__: breakdown,
   __NODELIST__: nodeList,
   __ROWS__: rows,
+  __PARAMROWS__: paramRows,
   __COUNT__: String(entries.length),
   __TOTAL__: TOTAL.toFixed(2),
+  __TOTALN__: TOTAL_N.toFixed(2),
+  __TOTALG__: TOTAL_G.toFixed(2),
+  __COST__: C.toFixed(2),
+  __GSHARE__: (TOTAL_G / TOTAL * 100).toFixed(1),
+  __MODEL_JSON__: JSON.stringify(Object.fromEntries(
+    entries.map(([name]) => [name, {
+      P: +MODEL[name].cl.P.toFixed(2), zh: MODEL[name].cl.zh,
+      s: +MODEL[name].cl.s.toFixed(4), F: +MODEL[name].cl.F.toFixed(3),
+      n: +MODEL[name].n.toFixed(3), g: +MODEL[name].g.toFixed(3),
+    }]))),
   __DATA_JSON__: JSON.stringify(DATA),
   __NODES_JSON__: JSON.stringify(NODES),
   __ROLE_JSON__: JSON.stringify(ROLE),

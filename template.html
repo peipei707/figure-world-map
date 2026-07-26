@@ -97,10 +97,12 @@ svg.map{display:block;width:100%;height:auto;background:#212226}
   gap:14px;flex-wrap:wrap;align-items:flex-end}
 .leg{display:none}
 .chips{display:flex;align-items:flex-end;gap:0}
-.chip{width:38px}
+/* 色块宽度跟着标签走：档位数字长了也不会挤成两行 */
+.chip{min-width:38px}
 .chip .sw{height:22px;border:1px solid rgba(0,0,0,.35);border-right:0}
 .chip:last-child .sw{border-right:1px solid rgba(0,0,0,.35)}
-.chip .lb{font-family:var(--mo);font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.02em}
+.chip .lb{font-family:var(--mo);font-size:9px;color:var(--muted);margin-top:4px;
+  letter-spacing:.02em;white-space:nowrap;padding-right:9px}
 .legtitle{font-family:var(--mo);font-size:9.5px;letter-spacing:.16em;color:var(--muted);
   text-transform:uppercase;margin-bottom:7px}
 .cats{display:flex;gap:13px;flex-wrap:wrap}
@@ -130,6 +132,8 @@ svg.map{display:block;width:100%;height:auto;background:#212226}
 .row b{font-family:var(--mo);font-weight:500;font-size:12.5px}
 .note{font-size:11.5px;line-height:1.6;color:var(--muted);margin-top:10px;
   border-left:2px solid var(--line);padding-left:9px}
+.rsub{font-family:var(--mo);font-size:9px;letter-spacing:.14em;color:var(--muted);
+  text-transform:uppercase;margin:11px 0 3px;padding-top:8px;border-top:1px solid var(--line)}
 .hint{padding:14px 12px 16px;font-size:12px;color:var(--muted);line-height:1.65}
 
 /* ranking bars */
@@ -148,6 +152,7 @@ svg.map{display:block;width:100%;height:auto;background:#212226}
 .firm{margin-bottom:12px}
 .firm:last-child{margin-bottom:2px}
 .firm .fn{font-size:12px;font-weight:600;margin-bottom:1px}
+.firm .pmul{float:right;font-family:var(--mo);font-size:10px;font-weight:400;color:var(--muted)}
 .firm .fm{font-family:var(--mo);font-size:10px;color:var(--muted);margin-bottom:5px}
 .firm .stack{display:flex;height:9px;overflow:hidden}
 .firm .stack div{height:9px}
@@ -174,6 +179,7 @@ svg.map{display:block;width:100%;height:auto;background:#212226}
   font-family:var(--mo);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--muted);margin:0;padding:9px 12px 8px;border-bottom:1px solid var(--line);font-weight:500;
 }
+.sheet h2 + .sheetscroll + h2{border-top:1px solid var(--line);margin-top:0}
 .sheetscroll{overflow-x:auto}
 table{border-collapse:collapse;width:100%;min-width:720px;font-size:11.5px}
 caption{text-align:left;padding:9px 12px 0;font-size:11.5px;color:var(--muted);line-height:1.6}
@@ -213,7 +219,7 @@ __VIEWCSS__
 <header class="head">
   <div class="eyebrow"><span>分布图 · 全球市场</span><span>数据截至 2024–2025</span></div>
   <h1>手办与收藏模型的<em> / </em>世界版图</h1>
-  <p class="sub">这个爱好并不是均匀铺在地球上的。它有一个原型策源地、一条制造带、几块高浓度消费区，和一圈刚刚被拉进来的新市场。切换下面三种读法，看的是同一批地方的三个不同侧面。</p>
+  <p class="sub">这个爱好并不是均匀铺在地球上的。它有一个原型策源地、一条制造带、几块高浓度消费区，和一圈刚刚被拉进来的新市场。前三屏看这批地方的规模、密度和分工；后两屏换一个问题——<b>销售额大不等于赚得多</b>：同一件东西在不同市场的零售价能差一倍以上，而这段价差里有多少被当地税和渠道拿走、多少回到制造端，各地完全不同。</p>
 </header>
 
 <div class="strip">
@@ -257,6 +263,12 @@ __BARS__
       </div>
     </div>
     <div class="card">
+      <h2>零售价拆到哪去了 / Price breakdown</h2>
+      <div class="firms">
+__BREAKDOWN__
+      </div>
+    </div>
+    <div class="card">
       <h2>厂商重心 / Centre of gravity</h2>
       <div class="firms">
 __FIRMS__
@@ -274,19 +286,45 @@ __NODELIST__
   <h2>全部数值 / Full sheet</h2>
   <div class="sheetscroll">
     <table>
-      <caption>__COUNT__ 个国家与地区，按估算规模从大到小排。规模合计 __TOTAL__ 亿美元，即全文采用的全球基数。</caption>
+      <caption>__COUNT__ 个国家与地区，按估算规模从大到小排。零售额合计 __TOTAL__ 亿美元（全文采用的全球基数）；按中国零售价重新计价后是 __TOTALN__ 亿美元的等量，扣完税费、渠道与制造成本，落到厂端的毛利池 __TOTALG__ 亿美元，占零售额的 __GSHARE__%。</caption>
       <thead>
         <tr>
           <th scope="col">地区</th>
-          <th scope="col">规模（亿美元）</th>
+          <th scope="col">零售额（亿美元）</th>
           <th scope="col">人均（美元）</th>
-          <th scope="col">全球占比</th>
+          <th scope="col">价格倍数</th>
+          <th scope="col">等量（亿美元）</th>
+          <th scope="col">毛利池（亿美元）</th>
+          <th scope="col">毛利占比</th>
           <th scope="col">产业角色</th>
           <th scope="col">说明</th>
         </tr>
       </thead>
       <tbody>
 __ROWS__
+      </tbody>
+    </table>
+  </div>
+
+  <h2>模型参数 / Assumptions</h2>
+  <div class="sheetscroll">
+    <table>
+      <caption>下面每一个数都是可以争论的假设，摊在这里是为了让人能逐个反驳。含税零售价 P = 出厂价 F ×（1 + 关税 + 头程）× 渠道倍数 ×（1 + 税）；价格倍数以中国大陆同款零售价为 1.00。制造成本统一取 __COST__（同样以中国零售价为 1），因为东西出自同一批工厂，成本不随卖到哪里改变。</caption>
+      <thead>
+        <tr>
+          <th scope="col">分组</th>
+          <th scope="col">价格倍数 P</th>
+          <th scope="col">当地税</th>
+          <th scope="col">关税</th>
+          <th scope="col">头程</th>
+          <th scope="col">渠道倍数 M</th>
+          <th scope="col">厂端留存</th>
+          <th scope="col">单件到手 F</th>
+          <th scope="col">单件毛利</th>
+        </tr>
+      </thead>
+      <tbody>
+__PARAMROWS__
       </tbody>
     </table>
   </div>
@@ -297,7 +335,9 @@ __ROWS__
   <b>口径打架，先说清楚</b>　这个品类没有一个各国通用的定义，所以“全球规模”没有可信的单一数字。英文行业报告统计的是 action figures，把北美算成 38–42%、亚太只有 18–27%；亚洲口径的“手办／フィギュア”把景品、扭蛋、盲盒、GK、拼装都算进来，于是亚太变成约 58%。各家给出的全球总额从 85 亿到 167 亿美元不等。<b>图上采用亚洲口径（广义角色模型）</b>，全球基数取 140 亿美元。<br>
   <b>一手来源</b>　AJA《アニメ産業レポート 2025》（2024 年数据）：全球动画产业市场 ¥3.84 兆（约 245 亿美元），海外 ¥2.17 兆／56%，国内 ¥1.67 兆／44%，海外同比 +26%；制作侧 ¥4,662 亿。IOEA 收录 136 场动漫活动，覆盖 51 个国家与地区（2023 年为 123 场／46 国）。Bandai Namco IR：玩具·爱好事业 FY2026 净销售额 ¥6,739 亿（约 42.6 亿美元），为集团第一大板块，Gundam 单 IP ¥2,543 亿；管理层目标海外占比 50%。Funko Form 10-K：美国以外销售占 2024 年净销售额约 35%。POP MART 2025 年报（HKEX）：营收 RMB 371.2 亿，海外 162.7 亿／43.8%，其中亚太 80.1 亿、美洲 68.1 亿、欧洲及其他 14.5 亿。日本玩具协会／JACTA：2024 年扭蛋出货规模 ¥1,410 亿，同比 +22.6%。<br>
   <b>国别数值是估算</b>　没有任何机构按国家公布这个品类的销售额。图上的国别数字是我按上述区域比例、人口和该国动漫零售活跃度拆出来的<b>量级估算</b>，用于比较相对位置，不能当统计数据引用。「人均」= 该国估算规模 ÷ 总人口，不是玩家人均消费。<br>
-  <b>投影</b>　Miller 圆柱投影，南纬 58° 以南裁去。底图 Natural Earth（world-atlas 110m），已做 Douglas–Peucker 简化。
+  <b>后两屏是模型，不是统计</b>　「价格校正」和「毛利池」不来自任何观测数据，而是一个把零售价拆开的模型：含税零售价 =出厂价 ×（1 + 关税 + 头程物流）× 渠道加价倍数 ×（1 + 当地税）。价格倍数的锚点取泡泡玛特同一新系列的跨市场定价（中国 ¥99 约 13.5 美元 / 美国 28 美元 ≈ 2.07 倍），其余市场按各自的税率、关税与渠道结构推。其中<b>法定税率是事实</b>（欧盟 19–22%、北欧 25%、日韩 10%、新加坡 9%；美国标价不含销售税，所以记 0，州税由消费者结账时另付）；<b>玩具进口关税</b>在欧盟、日本、澳洲基本为零，印度与巴西在 20% 上下，美国对华取 10%——Section 301 List 4A 的 7.5% 长期有效，2026 年叠加的 Section 122 10%（合计约 17.5%）正在诉讼中且临近到期，实际落点在 7.5%–17.5% 之间；<b>渠道加价倍数是假设</b>，取行业常见区间的中值，全部列在上面的参数表里。<br>
+  <b>三件必须说清的事</b>　其一，关税是对<b>出厂价</b>征的，不是对零售价——出厂价只占零售价两三成，所以 15% 的关税摊到标价上只有 3 个点左右；把欧美零售价推到中国两倍的，主要是渠道加价和当地税。其二，2 倍价差并不能全部由成本解释，剩下的部分模型记为<b>出口批发价本来就定得更高</b>，也就是厂端也吃到了一部分价差——这一项对结论影响很大，参数表里的「单件到手」就是它。其三，「毛利池」是<b>毛利</b>：厂端结算减去制造成本，没有扣模具摊销、设计、营销、仓储、退货和汇率，更不是净利润。<br>
+  <b>投影</b>　Miller 圆柱投影，南纬 58° 以南裁去。底图 Natural Earth（world-atlas 110m），已做 Douglas–Peucker 简化，并在 180° 经线上裁断，否则横跨东西经的国家会被拉成贯穿全图的横带。
 </footer>
 
 </div>
@@ -312,7 +352,9 @@ const DATA = __DATA_JSON__;
 const NODES = __NODES_JSON__;
 const ROLE = __ROLE_JSON__;
 const NODEKIND = __NODEKIND_JSON__;
+const MODEL = __MODEL_JSON__;
 const TOTAL = __TOTAL__;
+const TOTAL_G = __TOTALG__;
 
 const readout = document.getElementById("readout");
 const svg = document.querySelector("svg.map");
@@ -330,14 +372,21 @@ function showCountry(name){
     readout.innerHTML = `<b style="font-family:var(--dp);font-size:20px">${esc(name)}</b><br>暂无该地区的独立估算。`;
     return;
   }
+  const m = MODEL[name];
   readout.className = "readout";
   readout.innerHTML = `
     <div class="rname">${esc(d.zh)}</div>
     <div class="rlatin">${esc(name)}</div>
-    <div class="row"><span>市场规模</span><b>${d.m.toFixed(2)} 亿美元</b></div>
+    <div class="row"><span>零售额</span><b>${d.m.toFixed(2)} 亿美元</b></div>
     <div class="row"><span>人均年消费</span><b>${d.pc.toFixed(2)} 美元</b></div>
     <div class="row"><span>全球占比</span><b>${(d.m / TOTAL * 100).toFixed(1)}%</b></div>
     <div class="row"><span>产业角色</span><b style="color:${ROLE[d.role].c}">${esc(ROLE[d.role].label)}</b></div>
+    ${m ? `
+    <div class="rsub">成本口径 · ${esc(m.zh)}</div>
+    <div class="row"><span>零售价倍数</span><b>×${m.P.toFixed(2)}</b></div>
+    <div class="row"><span>厂端留存</span><b>${(m.s * 100).toFixed(0)}%</b></div>
+    <div class="row"><span>等量销售额</span><b>${m.n.toFixed(2)} 亿美元</b></div>
+    <div class="row"><span>厂端毛利池</span><b>${m.g.toFixed(2)} 亿美元 · ${(m.g / TOTAL_G * 100).toFixed(1)}%</b></div>` : ""}
     ${d.note ? `<div class="note">${esc(d.note)}</div>` : ""}`;
 }
 function showNode(n){
